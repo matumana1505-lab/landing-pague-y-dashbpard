@@ -1,73 +1,67 @@
 import { NextResponse } from "next/server"
-import { auth } from "@/auth"
+import {
+  ACCOUNT_MANAGEMENT_BASE,
+  BUSINESS_INFO_BASE,
+  LOCATION_READ_MASK,
+  googleFetch,
+  mapLocation,
+  requireGoogleAccessToken,
+  type RawLocation,
+} from "@/lib/google-business"
+
+interface RawAccount {
+  name?: string
+  accountName?: string
+}
 
 export async function GET() {
-  const session = await auth()
-
-  if (!session?.accessToken) {
-    return NextResponse.json(
-      { error: "No hay sesión activa de Google." },
-      { status: 401 }
-    )
+  const guard = await requireGoogleAccessToken()
+  if (!guard.ok) {
+    return NextResponse.json({ error: guard.error }, { status: guard.status })
   }
+  const { accessToken } = guard
 
   try {
-    const accountsResponse = await fetch(
-      "https://mybusinessbusinessinformation.googleapis.com/v1/accounts",
-      {
-        headers: {
-          Authorization: `Bearer ${session.accessToken}`,
-          "Content-Type": "application/json",
-        },
-      }
+    // Accounts live on the Account Management API, NOT the Business Information
+    // API. Calling the wrong host returns 404 and hides real businesses.
+    const accountsResult = await googleFetch<{ accounts?: RawAccount[] }>(
+      `${ACCOUNT_MANAGEMENT_BASE}/accounts`,
+      accessToken,
+      "accounts.list",
     )
 
-    if (!accountsResponse.ok) {
-      const errorText = await accountsResponse.text()
+    if (!accountsResult.ok) {
       return NextResponse.json(
-        { error: "No se pudieron cargar las cuentas de Google Business Profile.", details: errorText },
-        { status: accountsResponse.status }
+        {
+          error: "No se pudieron cargar las cuentas de Google Business Profile.",
+          status: accountsResult.status,
+          details: accountsResult.body,
+        },
+        { status: accountsResult.status },
       )
     }
 
-    const accountsData = await accountsResponse.json()
-    const accounts = Array.isArray(accountsData.accounts) ? accountsData.accounts : []
+    const accounts = Array.isArray(accountsResult.body.accounts)
+      ? accountsResult.body.accounts
+      : []
+
+    console.log(`[google-business] accounts.list returned ${accounts.length} account(s).`)
 
     const enrichedAccounts = await Promise.all(
-      accounts.map(async (account: any) => {
-        const accountId = account.name?.split("/").pop() || ""
+      accounts.map(async (account) => {
+        const accountId = account.name?.split("/").pop() ?? ""
 
-        const locationsResponse = await fetch(
-          `https://mybusinessbusinessinformation.googleapis.com/v1/${account.name}/locations?readMask=name,title,storeCode,primaryPhone,websiteUri,languageCode,primaryCategory,locationState`,
-          {
-            headers: {
-              Authorization: `Bearer ${session.accessToken}`,
-              "Content-Type": "application/json",
-            },
-          }
+        // Locations live on the Business Information API and require a readMask.
+        const locationsResult = await googleFetch<{ locations?: RawLocation[] }>(
+          `${BUSINESS_INFO_BASE}/${account.name}/locations?readMask=${encodeURIComponent(
+            LOCATION_READ_MASK,
+          )}&pageSize=100`,
+          accessToken,
+          `locations.list(${account.name})`,
         )
 
-        const locationsData = locationsResponse.ok
-          ? await locationsResponse.json()
-          : { locations: [] }
-
-        const locations = Array.isArray(locationsData.locations)
-          ? locationsData.locations.map((location: any) => {
-              const locationId = location.name?.split("/").pop() || ""
-              const address = location.locationState?.address?.lines?.join(", ") || ""
-
-              return {
-                id: locationId,
-                name: location.name || location.title || "Ubicación",
-                title: location.title || "Ubicación",
-                locationId,
-                accountId,
-                address,
-                phone: location.primaryPhone || "",
-                website: location.websiteUri || "",
-                category: location.primaryCategory?.displayName || "",
-              }
-            })
+        const locations = locationsResult.ok && Array.isArray(locationsResult.body.locations)
+          ? locationsResult.body.locations.map((location) => mapLocation(location, accountId))
           : []
 
         return {
@@ -76,15 +70,15 @@ export async function GET() {
           name: account.accountName || account.name || "Cuenta de Google Business",
           locations,
         }
-      })
+      }),
     )
 
     return NextResponse.json({ accounts: enrichedAccounts })
   } catch (error) {
-    console.error("Google Business Profile API error", error)
+    console.error("[google-business] accounts route error", error)
     return NextResponse.json(
       { error: "Error interno al obtener las cuentas de Google Business Profile." },
-      { status: 500 }
+      { status: 500 },
     )
   }
 }
