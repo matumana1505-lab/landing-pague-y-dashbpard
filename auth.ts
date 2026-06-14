@@ -1,61 +1,3 @@
-<<<<<<< HEAD
-import NextAuth from "next-auth"
-import type { NextAuthOptions } from "next-auth"
-import { getServerSession } from "next-auth"
-import GoogleProvider from "next-auth/providers/google"
-
-async function refreshGoogleAccessToken(token: any) {
-  if (!token.refreshToken) {
-    console.error("[Google OAuth] Missing refresh token; cannot refresh access token")
-    return {
-      ...token,
-      error: "RefreshAccessTokenError",
-    }
-  }
-
-  try {
-    const response = await fetch("https://oauth2.googleapis.com/token", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/x-www-form-urlencoded",
-      },
-      body: new URLSearchParams({
-        client_id: process.env.GOOGLE_CLIENT_ID!,
-        client_secret: process.env.GOOGLE_CLIENT_SECRET!,
-        grant_type: "refresh_token",
-        refresh_token: token.refreshToken,
-      }),
-    })
-
-    const refreshedTokens = await response.json()
-
-    console.log("[Google OAuth] Refresh token response", {
-      status: response.status,
-      ok: response.ok,
-      hasAccessToken: Boolean(refreshedTokens.access_token),
-      expiresIn: refreshedTokens.expires_in,
-      error: refreshedTokens.error,
-      errorDescription: refreshedTokens.error_description,
-    })
-
-    if (!response.ok) {
-      throw refreshedTokens
-    }
-
-    return {
-      ...token,
-      accessToken: refreshedTokens.access_token,
-      expiresAt: Math.floor(Date.now() / 1000 + refreshedTokens.expires_in),
-      refreshToken: refreshedTokens.refresh_token ?? token.refreshToken,
-      error: undefined,
-    }
-  } catch (error) {
-    console.error("[Google OAuth] Failed to refresh access token", error)
-    return {
-      ...token,
-      error: "RefreshAccessTokenError",
-    }
-=======
 import NextAuth, { type NextAuthOptions, getServerSession } from "next-auth"
 import type { Account, Profile } from "next-auth"
 import type { JWT } from "next-auth/jwt"
@@ -133,20 +75,15 @@ async function refreshGoogleAccessToken(token: JWT): Promise<JWT> {
   } catch (error) {
     console.error("[next-auth][refresh] Unexpected error refreshing token", error)
     return { ...token, error: "RefreshAccessTokenError" }
->>>>>>> 68d59f2da02e79707ff697d3e0ea5f8d55097e3d
   }
 }
 
 export const authConfig: NextAuthOptions = {
-<<<<<<< HEAD
-  secret: process.env.AUTH_SECRET ?? process.env.NEXTAUTH_SECRET,
-=======
   secret,
   // Use stateless JWT sessions (no DB adapter present). The token is encrypted
   // (JWE) with `secret` and stored in the session cookie.
   session: { strategy: "jwt" },
   debug: process.env.NODE_ENV !== "production",
->>>>>>> 68d59f2da02e79707ff697d3e0ea5f8d55097e3d
   providers: [
     GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID!,
@@ -180,9 +117,7 @@ export const authConfig: NextAuthOptions = {
         token.accessToken = account.access_token
         token.refreshToken = account.refresh_token ?? token.refreshToken
         token.expiresAt = account.expires_at
-<<<<<<< HEAD
         token.scope = account.scope
-=======
         token.error = undefined
 
         console.log(
@@ -193,7 +128,6 @@ export const authConfig: NextAuthOptions = {
           "| scope:",
           account.scope,
         )
->>>>>>> 68d59f2da02e79707ff697d3e0ea5f8d55097e3d
       }
 
       if (profile) {
@@ -233,12 +167,10 @@ export const authConfig: NextAuthOptions = {
         session.user.image = (token.picture as string | undefined) ?? session.user.image
       }
 
-<<<<<<< HEAD
       session.accessToken = token.accessToken as string | undefined
       session.refreshToken = token.refreshToken as string | undefined
       session.error = token.error as string | undefined
       session.scope = token.scope as string | undefined
-=======
       session.accessToken = token.accessToken
       session.refreshToken = token.refreshToken
       session.error = token.error
@@ -251,26 +183,15 @@ export const authConfig: NextAuthOptions = {
         "| error:",
         token.error ?? "none",
       )
->>>>>>> 68d59f2da02e79707ff697d3e0ea5f8d55097e3d
 
       return session
     },
   },
 }
+const handler = NextAuth(authConfig)
 
-export async function auth() {
-  return getServerSession(authConfig) as Promise<any>
-}
-
-<<<<<<< HEAD
-export default NextAuth(authConfig)
-=======
-// In next-auth v4 there is no `auth()`/`signIn()`/`signOut()` server export
-// (that is Auth.js v5). Provide a v4-correct server-side session helper so the
-// API routes can call `await auth()`.
 export function auth() {
   return getServerSession(authConfig)
 }
 
 export default handler
->>>>>>> 68d59f2da02e79707ff697d3e0ea5f8d55097e3d

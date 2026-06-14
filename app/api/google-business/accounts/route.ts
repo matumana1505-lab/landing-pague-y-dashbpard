@@ -13,7 +13,6 @@ interface RawAccount {
   name?: string
   accountName?: string
 }
-
 const GBP_ACCOUNT_MANAGEMENT_BASE_URL =
   "https://mybusinessaccountmanagement.googleapis.com/v1"
 const GBP_BUSINESS_INFORMATION_BASE_URL =
@@ -194,7 +193,6 @@ async function fetchLocationsForAccount(accountName: string, accessToken: string
 }
 
 export async function GET() {
-<<<<<<< HEAD
   const session = await auth()
 
   console.log("[GBP] Session check", {
@@ -209,16 +207,13 @@ export async function GET() {
       { error: "No hay sesion activa de Google." },
       { status: 401 }
     )
-=======
   const guard = await requireGoogleAccessToken()
   if (!guard.ok) {
     return NextResponse.json({ error: guard.error }, { status: guard.status })
->>>>>>> 68d59f2da02e79707ff697d3e0ea5f8d55097e3d
   }
   const { accessToken } = guard
 
   try {
-<<<<<<< HEAD
     const accounts = await fetchAccounts(session.accessToken)
 
     const enrichedAccounts = await Promise.all(
@@ -226,7 +221,6 @@ export async function GET() {
         const accountId = account.name?.split("/").pop() || ""
         const locations = account.name
           ? await fetchLocationsForAccount(account.name, session.accessToken!)
-=======
     // Accounts live on the Account Management API, NOT the Business Information
     // API. Calling the wrong host returns 404 and hides real businesses.
     const accountsResult = await googleFetch<{ accounts?: RawAccount[] }>(
@@ -267,7 +261,6 @@ export async function GET() {
 
         const locations = locationsResult.ok && Array.isArray(locationsResult.body.locations)
           ? locationsResult.body.locations.map((location) => mapLocation(location, accountId))
->>>>>>> 68d59f2da02e79707ff697d3e0ea5f8d55097e3d
           : []
 
         return {
@@ -304,7 +297,6 @@ export async function GET() {
     })
 
     return NextResponse.json({ accounts: enrichedAccounts })
-<<<<<<< HEAD
   } catch (error: any) {
     console.error("[GBP] Google Business Profile API error", {
       message: error?.message,
@@ -322,13 +314,11 @@ export async function GET() {
         details: error?.details,
       },
       { status: error?.status || 500 }
-=======
   } catch (error) {
     console.error("[google-business] accounts route error", error)
     return NextResponse.json(
       { error: "Error interno al obtener las cuentas de Google Business Profile." },
       { status: 500 },
->>>>>>> 68d59f2da02e79707ff697d3e0ea5f8d55097e3d
     )
   }
 }
