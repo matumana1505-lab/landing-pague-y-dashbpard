@@ -193,36 +193,19 @@ async function fetchLocationsForAccount(accountName: string, accessToken: string
 }
 
 export async function GET() {
-  const session = await auth()
 
-  console.log("[GBP] Session check", {
-    hasSession: Boolean(session),
-    hasAccessToken: Boolean(session?.accessToken),
-    userEmail: session?.user?.email,
-  })
 
-  if (!session?.accessToken) {
-    console.error("[GBP] Missing Google access token in session")
-    return NextResponse.json(
-      { error: "No hay sesion activa de Google." },
-      { status: 401 }
-    )
+
   const guard = await requireGoogleAccessToken()
   if (!guard.ok) {
     return NextResponse.json({ error: guard.error }, { status: guard.status })
+
   }
   const { accessToken } = guard
 
   try {
-    const accounts = await fetchAccounts(session.accessToken)
 
-    const enrichedAccounts = await Promise.all(
-      accounts.map(async (account) => {
-        const accountId = account.name?.split("/").pop() || ""
-        const locations = account.name
-          ? await fetchLocationsForAccount(account.name, session.accessToken!)
-    // Accounts live on the Account Management API, NOT the Business Information
-    // API. Calling the wrong host returns 404 and hides real businesses.
+   
     const accountsResult = await googleFetch<{ accounts?: RawAccount[] }>(
       `${ACCOUNT_MANAGEMENT_BASE}/accounts`,
       accessToken,
@@ -261,6 +244,7 @@ export async function GET() {
 
         const locations = locationsResult.ok && Array.isArray(locationsResult.body.locations)
           ? locationsResult.body.locations.map((location) => mapLocation(location, accountId))
+
           : []
 
         return {
@@ -297,6 +281,7 @@ export async function GET() {
     })
 
     return NextResponse.json({ accounts: enrichedAccounts })
+
   } catch (error: any) {
     console.error("[GBP] Google Business Profile API error", {
       message: error?.message,
@@ -314,11 +299,8 @@ export async function GET() {
         details: error?.details,
       },
       { status: error?.status || 500 }
-  } catch (error) {
-    console.error("[google-business] accounts route error", error)
-    return NextResponse.json(
-      { error: "Error interno al obtener las cuentas de Google Business Profile." },
-      { status: 500 },
+
+
     )
   }
 }
