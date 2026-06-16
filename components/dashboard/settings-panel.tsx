@@ -25,7 +25,7 @@ export function SettingsPanel({
   const [settings, setSettings] = useState<UserSettings>(initialSettings)
   const [isSaved, setIsSaved] = useState(false)
 
-  const handleToneChange = (value: "friendly" | "professional" | "formal") => {
+  const handleToneChange = (value: "cercano" | "professional" | "formal") => {
     setSettings({ ...settings, tone: value })
     setIsSaved(false)
   }
@@ -37,7 +37,7 @@ export function SettingsPanel({
   }
 
   const toneDescriptions = {
-    friendly: "Cálido, cercano y personal",
+    cercano: "Cálido, cercano y personal",
     professional: "Cordial y profesional",
     formal: "Formal y corporativo",
   }
@@ -75,7 +75,7 @@ export function SettingsPanel({
             Ejemplo de respuesta en tono {settings.tone}:
           </p>
           <p className="text-sm text-foreground italic">
-            {settings.tone === "friendly" &&
+            {settings.tone === "cercano" &&
               "¡Gracias por visitarnos! Nos alegra mucho que te haya gustado. Esperamos verte pronto 😊"}
             {settings.tone === "professional" &&
               "Agradecemos tu comentario. Nos complace saber que tuviste una buena experiencia. Te esperamos nuevamente."}

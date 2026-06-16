@@ -261,9 +261,9 @@ export async function GET() {
               locationId,
               accountId,
               address: getLocationAddress(location),
-              phone: location.primaryPhone || "",
-              website: location.websiteUri || "",
-              category: location.primaryCategory?.displayName || "",
+              phone: location.phone || "",
+website: location.website || "",
+category: location.category || "",
             }
           }),
         }
