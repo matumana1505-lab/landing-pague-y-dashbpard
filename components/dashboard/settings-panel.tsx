@@ -59,7 +59,7 @@ export function SettingsPanel({
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="friendly">Cercano</SelectItem>
+              <SelectItem value="cercano">Cercano</SelectItem>
               <SelectItem value="professional">Profesional</SelectItem>
               <SelectItem value="formal">Formal</SelectItem>
             </SelectContent>

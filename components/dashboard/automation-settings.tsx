@@ -2,9 +2,7 @@
 
 import { UserSettings } from "@/lib/types"
 import { Card } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { Toggle } from "@/components/ui/toggle"
 import { Bell, Zap, BarChart3 } from "lucide-react"
 
@@ -19,7 +17,11 @@ export function AutomationSettings({
 }: AutomationSettingsProps) {
   const [settings, setSettings] = useState<UserSettings>(initialSettings)
 
-  const handleToggle = (key: keyof Omit<UserSettings, "tone">) => {
+  useEffect(() => {
+    setSettings(initialSettings)
+  }, [initialSettings])
+
+  const handleToggle = (key: keyof Omit<UserSettings, "tone" | "additionalInstructions">) => {
     const newSettings = { ...settings, [key]: !settings[key] }
     setSettings(newSettings)
     onUpdateSettings?.(newSettings)

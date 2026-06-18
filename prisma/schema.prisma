@@ -1,0 +1,66 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum ResponseTone {
+  cercano
+  professional
+  formal
+}
+
+/// Usuario de la plataforma (sincronizado desde NextAuth / Google OAuth).
+model User {
+  id                    String     @id @default(cuid())
+  email                 String     @unique
+  name                  String?
+  image                 String?
+  googleSub             String?    @unique
+  onboardingCompletedAt DateTime?
+  activeBusinessId      String?
+  activeBusiness        Business?  @relation("ActiveBusiness", fields: [activeBusinessId], references: [id], onDelete: SetNull)
+  createdAt             DateTime   @default(now())
+  updatedAt             DateTime   @updatedAt
+  businesses            Business[] @relation("UserBusinesses")
+}
+
+/// Negocio vinculado a Google Business Profile (uno por ubicación).
+model Business {
+  id               String            @id @default(cuid())
+  userId           String
+  user             User              @relation("UserBusinesses", fields: [userId], references: [id], onDelete: Cascade)
+  googleAccountId  String
+  googleLocationId String
+  name             String
+  address          String?
+  phone            String?
+  isDemo           Boolean           @default(false)
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  aiConfig         BusinessAiConfig?
+  activeForUsers   User[]            @relation("ActiveBusiness")
+
+  @@unique([userId, googleAccountId, googleLocationId])
+  @@index([userId])
+}
+
+/// Configuración de IA para respuestas automáticas — una por negocio.
+model BusinessAiConfig {
+  id                        String       @id @default(cuid())
+  businessId                String       @unique
+  business                  Business     @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  tone                      ResponseTone @default(professional)
+  additionalInstructions    String       @default("")
+  autoRespond               Boolean      @default(false)
+  alertNegativeReviews      Boolean      @default(true)
+  monthlySummary            Boolean      @default(true)
+  send3StarReviewsForReview Boolean      @default(false)
+  /// Configuración extensible: longitud, emojis, idioma, firma, palabras prohibidas, etc.
+  advancedSettings          Json?
+  createdAt                 DateTime     @default(now())
+  updatedAt                 DateTime     @updatedAt
+}

@@ -2,7 +2,6 @@
 
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
-import { triggerTryClick } from "@/lib/utils"
 
 export function HeroSection() {
   const [clicked, setClicked] = useState(false)
@@ -10,47 +9,47 @@ export function HeroSection() {
   const handleTryClick = () => {
     console.log("Hero: Probar gratis clicked")
     setClicked(true)
-    triggerTryClick()
+    window.dispatchEvent(new CustomEvent("resply:hero-click"))
+    document.getElementById("contact-form")?.scrollIntoView({ behavior: "smooth" })
     setTimeout(() => setClicked(false), 2000)
   }
 
   return (
-    <section id="inicio" className="pt-24 pb-12 md:pt-28 md:pb-16 px-4 sm:px-6 lg:px-8">
+    <section className="pt-24 pb-12 md:pt-28 md:pb-16 px-4 sm:px-6 lg:px-8">
       <div className="max-w-5xl mx-auto">
         <div className="max-w-3xl mx-auto text-center">
           {/* Badge */}
           <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-secondary border border-border mb-5">
             <span className="text-sm text-muted-foreground">
-              Solución de reputación online para negocios locales
+              Automatización simple para negocios locales
             </span>
           </div>
 
           {/* Headline */}
           <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-semibold tracking-tight text-foreground text-balance leading-[1.15]">
-            Cada reseña sin respuesta te cuesta clientes. Resply las responde sola.
+            Respondé automáticamente tus reseñas de Google
           </h1>
 
           {/* Subheadline */}
           <p className="mt-5 text-base sm:text-lg md:text-xl text-muted-foreground max-w-xl mx-auto text-balance leading-relaxed">
-            Ahorrá tiempo cuidando tu imagen en Google y mantené tu perfil activo con respuestas profesionales.
+            Ahorrá horas respondiendo reseñas y mantené tu negocio siempre activo en Google.
           </p>
 
           {/* Primary CTA - DOMINANT */}
           <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3">
+        <Button
+          size="lg"
+          onClick={handleTryClick}
+          className="w-full sm:w-auto bg-foreground text-background hover:bg-foreground/90 rounded-full px-10 h-14 text-base font-semibold shadow-lg shadow-foreground/10 transition-all duration-200 hover:shadow-xl hover:shadow-foreground/15 hover:scale-[1.02]"
+        >
+          Probar gratis
+        </Button>
             <Button
-              size="lg"
-              onClick={handleTryClick}
-              className="w-full sm:w-auto bg-foreground text-background hover:bg-foreground/95 rounded-full px-10 sm:px-14 lg:px-16 h-16 sm:h-18 text-lg sm:text-xl font-semibold shadow-2xl shadow-foreground/15 transition-all duration-200 hover:shadow-[0_25px_75px_-30px_rgba(15,23,42,0.45)] hover:scale-[1.03]"
-            >
-              Probar gratis
-            </Button>
-            <Button
-              asChild
               variant="ghost"
               size="lg"
               className="w-full sm:w-auto text-muted-foreground hover:text-foreground rounded-full px-6 h-12 text-sm"
             >
-              <a href="#como-funciona">Ver cómo funciona</a>
+              Ver cómo funciona
             </Button>
             {clicked && (
               <div className="mt-2 text-sm text-primary-foreground">Scroll triggered</div>

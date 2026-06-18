@@ -14,11 +14,13 @@ type ToneType = "cercano" | "professional" | "formal"
 interface Step2CustomizeResponsesProps {
   onContinue: (tone: ToneType, instructions: string) => void
   isLoading?: boolean
+  businessName?: string
 }
 
 export function Step2CustomizeResponses({
   onContinue,
   isLoading = false,
+  businessName,
 }: Step2CustomizeResponsesProps) {
   const [tone, setTone] = useState<ToneType>("professional")
   const [additionalInstructions, setAdditionalInstructions] = useState("")
@@ -67,7 +69,14 @@ export function Step2CustomizeResponses({
             Personalizá tus respuestas
           </h1>
           <p className="text-lg text-slate-600">
-            Define el tono que quieres para tus respuestas automáticas.
+            Define el tono que quieres para tus respuestas automáticas
+            {businessName ? (
+              <>
+                {" "}
+                de <strong>{businessName}</strong>
+              </>
+            ) : null}
+            .
           </p>
         </div>
 

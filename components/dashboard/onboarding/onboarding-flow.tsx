@@ -8,12 +8,16 @@ import { Step2CustomizeResponses } from "./step-2-customize-responses"
 import { Step3ConfigureAutomation } from "./step-3-configure-automation"
 
 interface OnboardingFlowProps {
-  onComplete: (settings: UserSettings) => void
+  onComplete: (settings: UserSettings, business: BusinessProfile | null) => void
   initialState?: OnboardingState
   onBusinessSelected?: (business: BusinessProfile) => void
 }
 
-export function OnboardingFlow({ onComplete, initialState, onBusinessSelected }: OnboardingFlowProps) {
+export function OnboardingFlow({
+  onComplete,
+  initialState,
+  onBusinessSelected,
+}: OnboardingFlowProps) {
   const [state, setState] = useState<OnboardingState>(
     initialState || {
       currentStep: "connect",
@@ -25,6 +29,7 @@ export function OnboardingFlow({ onComplete, initialState, onBusinessSelected }:
 
   const [tempSettings, setTempSettings] = useState<Partial<UserSettings>>({})
   const [selectedBusiness, setSelectedBusiness] = useState<BusinessProfile | null>(null)
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
   const handleConnectGoogle = async () => {
     await signIn("google", {
@@ -68,7 +73,7 @@ export function OnboardingFlow({ onComplete, initialState, onBusinessSelected }:
     }))
   }
 
-  const handleConfigureAutomation = (config: {
+  const handleConfigureAutomation = async (config: {
     autoRespondPositive: boolean
     alertNegative: boolean
     monthlySummary: boolean
@@ -83,7 +88,12 @@ export function OnboardingFlow({ onComplete, initialState, onBusinessSelected }:
       additionalInstructions: tempSettings.additionalInstructions || "",
     }
 
-    onComplete(finalSettings)
+    setIsSubmitting(true)
+    try {
+      await onComplete(finalSettings, selectedBusiness)
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   return (
@@ -97,10 +107,16 @@ export function OnboardingFlow({ onComplete, initialState, onBusinessSelected }:
         />
       )}
       {state.currentStep === "customize" && (
-        <Step2CustomizeResponses onContinue={handleCustomizeResponses} />
+        <Step2CustomizeResponses
+          onContinue={handleCustomizeResponses}
+          businessName={selectedBusiness?.name}
+        />
       )}
       {state.currentStep === "automation" && (
-        <Step3ConfigureAutomation onActivate={handleConfigureAutomation} />
+        <Step3ConfigureAutomation
+          onActivate={handleConfigureAutomation}
+          isLoading={isSubmitting}
+        />
       )}
     </>
   )

@@ -1,18 +1,25 @@
 "use client"
 
 import { useSession } from "next-auth/react"
-import { BusinessProfile } from "@/lib/types"
+import { BusinessProfile, PersistedBusiness } from "@/lib/types"
 import { Button } from "@/components/ui/button"
 import { formatDistanceToNow } from "date-fns"
 import { es } from "date-fns/locale"
+import { BusinessSwitcher } from "@/components/dashboard/business-switcher"
 
 interface DashboardHeaderProps {
   businessProfile: BusinessProfile
+  businesses?: PersistedBusiness[]
+  activeBusinessId?: string | null
+  onBusinessChange?: (businessId: string) => void
   onConnectClick?: () => void
 }
 
 export function DashboardHeader({
   businessProfile,
+  businesses = [],
+  activeBusinessId = null,
+  onBusinessChange,
   onConnectClick,
 }: DashboardHeaderProps) {
   const { data: session } = useSession()
@@ -21,9 +28,8 @@ export function DashboardHeader({
     <div className="border-b border-border bg-card/50 sticky top-0 z-40">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
         <div className="flex items-center justify-between gap-4">
-          {/* Logo y nombre */}
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center shrink-0">
               <svg
                 className="w-6 h-6 text-primary-foreground"
                 fill="none"
@@ -38,16 +44,23 @@ export function DashboardHeader({
                 />
               </svg>
             </div>
-            <div>
+            <div className="min-w-0">
               <p className="text-sm text-muted-foreground">Resply Dashboard</p>
-              <p className="text-lg font-semibold text-foreground">
+              <p className="text-lg font-semibold text-foreground truncate">
                 {businessProfile.name}
               </p>
             </div>
           </div>
 
-          {/* Estado de conexión */}
-          <div className="flex items-center gap-3 ml-auto">
+          <div className="flex items-center gap-3 ml-auto flex-wrap justify-end">
+            {businesses.length > 0 && onBusinessChange && (
+              <BusinessSwitcher
+                businesses={businesses}
+                activeBusinessId={activeBusinessId}
+                onBusinessChange={onBusinessChange}
+              />
+            )}
+
             {businessProfile.isConnected ? (
               <div className="flex items-center gap-2">
                 <div className="flex items-center gap-2 px-3 py-1.5 bg-green-500/10 border border-green-500/20 rounded-full">
@@ -65,7 +78,7 @@ export function DashboardHeader({
                   </div>
                 )}
                 {businessProfile.lastSyncedAt && (
-                  <p className="text-xs text-muted-foreground">
+                  <p className="text-xs text-muted-foreground hidden lg:block">
                     Sync hace{" "}
                     {formatDistanceToNow(businessProfile.lastSyncedAt, {
                       locale: es,
