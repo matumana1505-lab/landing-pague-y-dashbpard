@@ -20,7 +20,11 @@ export default function TestPage() {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ review }),
+        body: JSON.stringify({ 
+  review,
+  businessId:"cmqk4aohy0004t9i4kvrhzowr",
+  rating: 5,
+}),
       })
 
       if (!response.ok) {
