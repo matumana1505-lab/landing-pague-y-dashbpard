@@ -1,8 +1,9 @@
-﻿import { prisma } from "@/lib/prisma";
+import { prisma } from "@/lib/prisma";
 import {
   buildSystemPrompt,
   buildUserPrompt,
 } from "@/lib/prompt/build-review-response-prompt";
+import { requireSessionUser } from "@/lib/auth/require-session";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { NextRequest, NextResponse } from "next/server";
 
@@ -12,10 +13,13 @@ if (!apiKey) {
 }
 
 const genAI = new GoogleGenerativeAI(apiKey);
-const model = genAI.getGenerativeModel({
-  model: "gemini-2.0-flash-lite",
-  systemInstruction: buildSystemPrompt(),
-});
+
+function getModel() {
+  return genAI.getGenerativeModel({
+    model: process.env.GEMINI_MODEL ?? "gemini-3.1-flash-lite",
+    systemInstruction: buildSystemPrompt(),
+  });
+}
 
 interface ReviewRequestBody {
   review: string;
@@ -25,6 +29,14 @@ interface ReviewRequestBody {
 
 export async function POST(request: NextRequest) {
   try {
+    const session = await requireSessionUser();
+    if (!session.ok) {
+      return NextResponse.json(
+        { error: session.error },
+        { status: session.status }
+      );
+    }
+
     const body: ReviewRequestBody = await request.json();
 
     if (!body.businessId) {
@@ -48,6 +60,16 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    if (
+      body.rating !== undefined &&
+      (body.rating < 1 || body.rating > 5)
+    ) {
+      return NextResponse.json(
+        { error: "El rating debe estar entre 1 y 5" },
+        { status: 400 }
+      );
+    }
+
     const business = await prisma.business.findUnique({
       where: { id: body.businessId },
       include: { aiConfig: true },
@@ -60,6 +82,13 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    if (business.userId !== session.user.id) {
+      return NextResponse.json(
+        { error: "No tenés permiso para acceder a este negocio" },
+        { status: 403 }
+      );
+    }
+
     const userPrompt = buildUserPrompt({
       review: body.review,
       rating: body.rating,
@@ -68,8 +97,9 @@ export async function POST(request: NextRequest) {
       businessName: business.name,
     });
 
+    const model = getModel();
     const result = await model.generateContent(userPrompt);
-    const responseText = result.response.text();
+    const responseText = result.response.text().trim();
 
     if (!responseText) {
       return NextResponse.json(
@@ -88,7 +118,18 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    if (error instanceof Error && "status" in error) {
+      const status = (error as { status: number }).status;
+      if (status === 429) {
+        return NextResponse.json(
+          { error: "Servicio temporalmente no disponible, intentá más tarde" },
+          { status: 503 }
+        );
+      }
+    }
+
     console.error("Error generating response:", error);
+
     return NextResponse.json(
       { error: "Error interno del servidor" },
       { status: 500 }
