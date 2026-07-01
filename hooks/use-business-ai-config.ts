@@ -128,9 +128,6 @@ export function useBusinessAiConfig({
     }
 
     void loadConfig(businessId)
-    void setActiveBusiness(businessId).catch(() => {
-      // No bloquear la UI si falla marcar negocio activo
-    })
 
     return () => {
       if (debounceTimer.current) {

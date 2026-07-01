@@ -1,6 +1,6 @@
 import type { Metadata } from "next"
-import { DashboardContent } from "@/components/dashboard/dashboard-content"
 import { ThemeProvider } from "@/components/theme-provider"
+import { DashboardShell } from "@/components/dashboard/dashboard-shell"
 
 export const metadata: Metadata = {
   title: "Dashboard - Resply",
@@ -14,9 +14,7 @@ export default function DashboardLayout({
 }>) {
   return (
     <ThemeProvider>
-      <div className="bg-background">
-        {children}
-      </div>
+      <DashboardShell>{children}</DashboardShell>
     </ThemeProvider>
   )
 }

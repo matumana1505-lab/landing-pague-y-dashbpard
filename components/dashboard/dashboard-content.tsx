@@ -1,7 +1,8 @@
 "use client"
 
-import { signIn, useSession } from "next-auth/react"
+import { signIn } from "next-auth/react"
 import { useCallback, useEffect, useState } from "react"
+import { useDashboard } from "@/components/dashboard/dashboard-shell"
 import { DashboardHeader } from "@/components/dashboard/dashboard-header"
 import { MetricsSummary } from "@/components/dashboard/metrics-summary"
 import { RequiresAttentionSection } from "@/components/dashboard/requires-attention-section"
@@ -18,8 +19,6 @@ import {
 import {
   aiConfigToUserSettings,
   completeOnboarding,
-  fetchBusinesses,
-  fetchUserProfile,
   persistedBusinessToProfile,
   userSettingsToAiConfig,
 } from "@/lib/api-client"
@@ -30,7 +29,7 @@ import { useBusinessAiConfig } from "@/hooks/use-business-ai-config"
 import { Loader2 } from "lucide-react"
 
 export function DashboardContent() {
-  const { status: sessionStatus } = useSession()
+  const { sessionStatus, businesses: ctxBusinesses, activeBusinessId: ctxActiveBusinessId, setActiveBusinessId: setCtxActiveBusinessId, userProfile, loading: ctxLoading, reload: ctxReload, error: ctxError } = useDashboard()
   const [businessProfile, setBusinessProfile] = useState<BusinessProfile | null>(null)
   const [businesses, setBusinesses] = useState<PersistedBusiness[]>([])
   const [activeBusinessId, setActiveBusinessId] = useState<string | null>(null)
@@ -38,7 +37,7 @@ export function DashboardContent() {
   const [onboardingState, setOnboardingState] = useState<OnboardingState>(mockOnboardingState)
   const [selectedReview, setSelectedReview] = useState<Review | null>(null)
   const [showResponseDialog, setShowResponseDialog] = useState(false)
-  const [isBootstrapping, setIsBootstrapping] = useState(true)
+  
   const [bootstrapError, setBootstrapError] = useState<string | null>(null)
 
   const {
@@ -54,54 +53,22 @@ export function DashboardContent() {
 
   const userSettings: UserSettings = aiConfigToUserSettings(aiConfig)
 
-  const bootstrapDashboard = useCallback(async () => {
-    if (sessionStatus !== "authenticated") {
-      if (sessionStatus === "unauthenticated") {
-        setIsBootstrapping(false)
-      }
-      return
-    }
+  useEffect(() => {
+    // derive local state from dashboard context
+    setBusinesses(ctxBusinesses as PersistedBusiness[])
+    setActiveBusinessId(ctxActiveBusinessId)
 
-    setIsBootstrapping(true)
-    setBootstrapError(null)
-
-    try {
-      const [profileRes, businessesRes] = await Promise.all([
-        fetchUserProfile(),
-        fetchBusinesses(),
-      ])
-
-      setBusinesses(businessesRes.businesses)
-
-      if (profileRes.user.onboardingCompleted) {
+    if (userProfile) {
+      if (userProfile.onboardingCompleted) {
         setOnboardingState({
           currentStep: "completed",
           googleConnected: true,
           responseToneSelected: true,
           automationConfigured: true,
         })
-
-        const activeId =
-          businessesRes.activeBusinessId ?? businessesRes.businesses[0]?.id ?? null
-        setActiveBusinessId(activeId)
-
-        const activeBusiness = businessesRes.businesses.find((b) => b.id === activeId)
-        if (activeBusiness) {
-          setBusinessProfile(persistedBusinessToProfile(activeBusiness))
-        }
       }
-    } catch (err) {
-      setBootstrapError(
-        err instanceof Error ? err.message : "No se pudo cargar el dashboard"
-      )
-    } finally {
-      setIsBootstrapping(false)
     }
-  }, [sessionStatus])
-
-  useEffect(() => {
-    void bootstrapDashboard()
-  }, [bootstrapDashboard])
+  }, [ctxBusinesses, ctxActiveBusinessId, userProfile])
 
   const handleConnectGoogle = async () => {
     await signIn("google", {
@@ -118,6 +85,7 @@ export function DashboardContent() {
     const business = businesses.find((b) => b.id === businessId)
     if (!business) return
 
+    void setCtxActiveBusinessId(businessId)
     setActiveBusinessId(businessId)
     setBusinessProfile(persistedBusinessToProfile(business))
   }
@@ -175,12 +143,9 @@ export function DashboardContent() {
         automationConfigured: true,
       })
 
-      setBusinesses((prev) => {
-        const exists = prev.some((b) => b.id === data.business.id)
-        return exists ? prev : [...prev, data.business]
-      })
-      setActiveBusinessId(data.business.id)
-      setBusinessProfile(persistedBusinessToProfile(data.business))
+      // Update central dashboard state: set active business and reload lists
+      await setCtxActiveBusinessId(data.business.id)
+      await ctxReload()
 
       setReviews((prev) =>
         prev.map((r) => {
@@ -211,7 +176,7 @@ export function DashboardContent() {
     updateConfig(userSettingsToAiConfig(settings))
   }
 
-  if (sessionStatus === "loading" || isBootstrapping) {
+  if (sessionStatus === "loading" || ctxLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center gap-3">
         <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
@@ -220,14 +185,14 @@ export function DashboardContent() {
     )
   }
 
-  if (bootstrapError && onboardingState.currentStep === "completed") {
+  if ((bootstrapError || ctxError) && onboardingState.currentStep === "completed") {
     return (
       <div className="min-h-screen flex items-center justify-center p-6">
         <Card className="p-8 max-w-md text-center space-y-4">
-          <p className="text-destructive">{bootstrapError}</p>
+          <p className="text-destructive">{bootstrapError ?? ctxError}</p>
           <button
             type="button"
-            onClick={() => void bootstrapDashboard()}
+            onClick={() => void ctxReload()}
             className="text-sm text-primary hover:underline"
           >
             Reintentar
