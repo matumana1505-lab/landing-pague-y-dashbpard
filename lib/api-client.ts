@@ -10,7 +10,9 @@ import type {
   ErrorResponse,
   GenerateReviewResponseRequest,
   GenerateReviewResponseResponse,
+  GoogleBusinessAccountsResponse,
   PersistedBusiness,
+  ReviewResponsesResponse,
   UserProfileResponse,
   UserSettings,
 } from "@/lib/types"
@@ -155,4 +157,14 @@ export async function generateReviewResponse(
     body: JSON.stringify(request),
   })
   return parseJsonResponse<GenerateReviewResponseResponse>(response)
+}
+
+export async function fetchReviewResponses(businessId: string): Promise<ReviewResponsesResponse> {
+  const response = await fetch(`${API_BASE_URL}/review-responses?businessId=${encodeURIComponent(businessId)}`)
+  return parseJsonResponse<ReviewResponsesResponse>(response)
+}
+
+export async function fetchGoogleBusinessAccounts(): Promise<GoogleBusinessAccountsResponse> {
+  const response = await fetch(`${API_BASE_URL}/google-business/accounts`)
+  return parseJsonResponse<GoogleBusinessAccountsResponse>(response)
 }

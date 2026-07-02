@@ -38,14 +38,10 @@ export async function requireGoogleAccessToken(): Promise<
   const session = await auth()
 
   if (!session) {
-    console.warn(
-      "[google-business] No active session. The session cookie is missing or could not be decrypted (check NEXTAUTH_SECRET).",
-    )
     return { ok: false, error: "No hay sesión activa de Google.", status: 401 }
   }
 
   if (session.error) {
-    console.error("[google-business] Session token error:", session.error)
     return {
       ok: false,
       error: `Sesión de Google inválida (${session.error}). Vuelve a conectar tu cuenta.`,
@@ -54,7 +50,6 @@ export async function requireGoogleAccessToken(): Promise<
   }
 
   if (!session.accessToken) {
-    console.warn("[google-business] Session present but accessToken is missing.")
     return { ok: false, error: "No hay sesión activa de Google.", status: 401 }
   }
 
@@ -66,8 +61,6 @@ export async function googleFetch<T = unknown>(
   accessToken: string,
   label: string,
 ): Promise<GoogleFetchResult<T>> {
-  console.log(`[google-business] -> GET ${url}`)
-
   const response = await fetch(url, {
     headers: {
       Authorization: `Bearer ${accessToken}`,
@@ -82,10 +75,6 @@ export async function googleFetch<T = unknown>(
   } catch {
     body = { raw: rawBody } as unknown as T
   }
-
-  console.log(
-    `[google-business] <- ${label} status: ${response.status} body: ${rawBody.slice(0, 2000)}`,
-  )
 
   return { ok: response.ok, status: response.status, body, rawBody }
 }

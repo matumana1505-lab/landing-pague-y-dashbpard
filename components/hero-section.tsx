@@ -7,7 +7,6 @@ export function HeroSection() {
   const [clicked, setClicked] = useState(false)
 
   const handleTryClick = () => {
-    console.log("Hero: Probar gratis clicked")
     setClicked(true)
     window.dispatchEvent(new CustomEvent("resply:hero-click"))
     document.getElementById("contact-form")?.scrollIntoView({ behavior: "smooth" })

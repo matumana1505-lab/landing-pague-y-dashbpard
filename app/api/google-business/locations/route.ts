@@ -47,11 +47,8 @@ export async function GET(request: NextRequest) {
       ? result.body.locations.map((location) => mapLocation(location, accountId))
       : []
 
-    console.log(`[google-business] locations.list returned ${locations.length} location(s).`)
-
     return NextResponse.json({ locations })
-  } catch (error) {
-    console.error("[google-business] locations route error", error)
+  } catch {
     return NextResponse.json(
       { error: "Error interno al obtener las ubicaciones de Google Business Profile." },
       { status: 500 },

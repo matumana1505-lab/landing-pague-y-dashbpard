@@ -6,6 +6,8 @@ import {
 import { requireSessionUser } from "@/lib/auth/require-session";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { NextRequest, NextResponse } from "next/server";
+import { upsertReviewResponse } from "@/lib/services/review-response-service";
+import type { GenerateReviewResponseRequest } from "@/lib/types";
 
 const apiKey = process.env.GEMINI_API_KEY;
 if (!apiKey) {
@@ -21,11 +23,7 @@ function getModel() {
   });
 }
 
-interface ReviewRequestBody {
-  review: string;
-  businessId: string;
-  rating?: number;
-}
+type ReviewRequestBody = GenerateReviewResponseRequest;
 
 export async function POST(request: NextRequest) {
   try {
@@ -101,6 +99,18 @@ export async function POST(request: NextRequest) {
     const result = await model.generateContent(userPrompt);
     const responseText = result.response.text().trim();
 
+    if (body.reviewId) {
+      await upsertReviewResponse({
+        businessId: body.businessId,
+        reviewId: body.reviewId,
+        reviewText: body.review,
+        generatedText: responseText,
+        status: "GENERATED",
+        rating: body.rating ?? null,
+        reviewSource: body.reviewSource ?? "mock",
+      })
+    }
+
     if (!responseText) {
       return NextResponse.json(
         { error: "No se pudo generar una respuesta" },
@@ -127,8 +137,6 @@ export async function POST(request: NextRequest) {
         );
       }
     }
-
-    console.error("Error generating response:", error);
 
     return NextResponse.json(
       { error: "Error interno del servidor" },

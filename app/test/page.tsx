@@ -1,6 +1,7 @@
 "use client"
 
 import { FormEvent, useState } from "react"
+import { generateReviewResponse } from "@/lib/api-client"
 
 export default function TestPage() {
   const [review, setReview] = useState("")
@@ -15,26 +16,12 @@ export default function TestPage() {
     setLoading(true)
 
     try {
-      const response = await fetch("/api/generate-review-response", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ 
-  review,
-  businessId:"cmqk4aohy0004t9i4kvrhzowr",
-  rating: 5,
-}),
+      const data = await generateReviewResponse({
+        review,
+        businessId: "cmqk4aohy0004t9i4kvrhzowr",
+        rating: 5,
       })
-
-      if (!response.ok) {
-        const text = await response.text()
-        throw new Error(`HTTP ${response.status}: ${text}`)
-      }
-
-      const data = await response.json()
-      const generated = typeof data === "string" ? data : data?.response ?? JSON.stringify(data)
-      setResult(generated)
+      setResult(data.response)
     } catch (err) {
       setError(err instanceof Error ? err.message : "Ocurrió un error inesperado")
     } finally {

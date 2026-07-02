@@ -19,6 +19,7 @@ import {
 import {
   aiConfigToUserSettings,
   completeOnboarding,
+  fetchReviewResponses,
   persistedBusinessToProfile,
   userSettingsToAiConfig,
 } from "@/lib/api-client"
@@ -70,6 +71,33 @@ export function DashboardContent() {
     }
   }, [ctxBusinesses, ctxActiveBusinessId, userProfile])
 
+  useEffect(() => {
+    const loadPersistedResponses = async () => {
+      if (!activeBusinessId) return
+
+      try {
+        const data = await fetchReviewResponses(activeBusinessId)
+        setReviews((prev) =>
+          prev.map((review) => {
+            const persisted = data.responses.find((item) => item.reviewId === review.id)
+            if (!persisted) return review
+
+            return {
+              ...review,
+              hasResponse: Boolean(persisted.publishedText || persisted.generatedText),
+              response: persisted.publishedText ?? persisted.generatedText,
+              responseDate: persisted.publishedAt ? new Date(persisted.publishedAt) : undefined,
+            }
+          })
+        )
+      } catch {
+        // Se mantiene el estado actual si no hay respuestas persistidas.
+      }
+    }
+
+    void loadPersistedResponses()
+  }, [activeBusinessId])
+
   const handleConnectGoogle = async () => {
     await signIn("google", {
       callbackUrl: "/dashboard",
@@ -114,6 +142,21 @@ export function DashboardContent() {
     setShowResponseDialog(false)
   }
 
+  const handleGenerateResponse = (reviewId: string, response: string) => {
+    setReviews((prev) =>
+      prev.map((review) =>
+        review.id === reviewId
+          ? {
+              ...review,
+              response,
+              hasResponse: false,
+              responseDate: undefined,
+            }
+          : review
+      )
+    )
+  }
+
   const handleOnboardingComplete = async (
     settings: UserSettings,
     selectedBusiness: BusinessProfile | null
@@ -146,25 +189,6 @@ export function DashboardContent() {
       // Update central dashboard state: set active business and reload lists
       await setCtxActiveBusinessId(data.business.id)
       await ctxReload()
-
-      setReviews((prev) =>
-        prev.map((r) => {
-          if ((r.rating === 4 || r.rating === 5) && !r.hasResponse) {
-            const tones: Record<string, string> = {
-              cercano: "¡Gracias por tu reseña! Nos alegra mucho que te haya gustado.",
-              professional: "Gracias por tu confianza. Continuaremos mejorando nuestro servicio.",
-              formal: "Le agradecemos sinceramente por su excelente evaluación.",
-            }
-            return {
-              ...r,
-              hasResponse: true,
-              response: tones[settings.tone] || "Gracias por tu reseña.",
-              responseDate: new Date(),
-            }
-          }
-          return r
-        })
-      )
     } catch (err) {
       setBootstrapError(
         err instanceof Error ? err.message : "Error al completar el onboarding"
@@ -242,7 +266,11 @@ export function DashboardContent() {
           <RequiresAttentionSection
             reviews={reviews}
             tone={userSettings.tone}
+            businessId={activeBusinessId}
+            businessName={businessProfile?.name ?? "Tu negocio"}
+            additionalInstructions={aiConfig.additionalInstructions}
             onApproveResponse={handleApproveResponse}
+            onGenerateResponse={handleGenerateResponse}
           />
 
           <Tabs defaultValue="reviews" className="w-full">

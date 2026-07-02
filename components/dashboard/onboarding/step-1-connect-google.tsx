@@ -5,6 +5,7 @@ import { useSession } from "next-auth/react"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { BusinessProfile } from "@/lib/types"
+import { fetchGoogleBusinessAccounts } from "@/lib/api-client"
 import { CheckCircle2, Loader2, Building2, Star } from "lucide-react"
 
 interface BusinessLocation {
@@ -72,16 +73,9 @@ export function Step1ConnectGoogle({
     setIsLoadingLocations(true)
     setError(null)
 
-    fetch("/api/google-business/accounts")
-      .then((response) => response.json())
+    fetchGoogleBusinessAccounts()
       .then((data) => {
         if (!isMounted) return
-        if (data.error) {
-          setError(data.error)
-          setAccounts([])
-          return
-        }
-
         setAccounts(data.accounts || [])
       })
       .catch(() => {

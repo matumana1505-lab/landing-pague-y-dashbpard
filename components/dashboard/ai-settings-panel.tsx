@@ -6,7 +6,6 @@ import { Badge } from "@/components/ui/badge"
 import { Textarea } from "@/components/ui/textarea"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Label } from "@/components/ui/label"
-import { getSuggestedResponseByTone } from "@/lib/mock-data"
 import { TONE_DESCRIPTIONS } from "@/lib/ai-config/defaults"
 import { Loader2 } from "lucide-react"
 
@@ -52,8 +51,6 @@ export function AiSettingsPanel({
   isDefault = false,
   onConfigChange,
 }: AiSettingsPanelProps) {
-  const previewResponse = getSuggestedResponseByTone(config.tone, 5)
-
   if (isLoading) {
     return (
       <Card className="p-12 flex items-center justify-center gap-3">
@@ -176,7 +173,9 @@ export function AiSettingsPanel({
             Respuesta sugerida ({config.tone})
           </p>
           <div className="bg-primary/5 border border-primary/20 rounded-lg p-4">
-            <p className="text-foreground leading-relaxed">{previewResponse}</p>
+            <p className="text-foreground leading-relaxed">
+              La respuesta se generará cuando la solicites desde una reseña, usando el tono y las instrucciones actuales.
+            </p>
           </div>
         </div>
       </Card>

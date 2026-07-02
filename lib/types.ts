@@ -10,11 +10,63 @@ export interface GenerateReviewResponseRequest {
   tone?: ResponseTone;
   additionalInstructions?: string;
   businessName?: string;
+  businessId: string;
+  reviewId?: string;
+  reviewSource?: string;
 }
 
 export interface GenerateReviewResponseResponse {
   response: string;
   success: true;
+}
+
+export type ReviewResponseStatus = "GENERATED" | "EDITED" | "PUBLISHED" | "APPROVED" | "FAILED" | "SCHEDULED";
+
+export interface ReviewResponseRecord {
+  id: string;
+  businessId: string;
+  reviewId: string;
+  googleReviewId: string | null;
+  reviewText: string;
+  generatedText: string;
+  publishedText: string | null;
+  status: ReviewResponseStatus;
+  version: number;
+  lastSyncedAt: string | null;
+  publishedAt: string | null;
+  publishedBy: string | null;
+  editedByUser: boolean;
+  rating: number | null;
+  reviewSource: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ReviewResponsesResponse {
+  responses: ReviewResponseRecord[];
+}
+
+export interface GoogleBusinessLocation {
+  id: string;
+  name: string;
+  title: string;
+  locationId: string;
+  accountId: string;
+  address: string;
+  phone: string;
+  website: string;
+  category: string;
+}
+
+export interface GoogleBusinessAccount {
+  id: string;
+  accountId: string;
+  name: string;
+  locations: GoogleBusinessLocation[];
+}
+
+export interface GoogleBusinessAccountsResponse {
+  accounts: GoogleBusinessAccount[];
 }
 
 export interface ErrorResponse {
@@ -64,7 +116,8 @@ export interface UserSettings {
   additionalInstructions?: string;
 }
 
-export interface BusinessAiConfigDto {  tone: ResponseTone;
+export interface BusinessAiConfigDto {
+  tone: ResponseTone;
   additionalInstructions: string;
   autoRespond: boolean;
   alertNegativeReviews: boolean;

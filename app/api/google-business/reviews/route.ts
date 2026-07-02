@@ -79,15 +79,12 @@ export async function GET(request: NextRequest) {
         }))
       : []
 
-    console.log(`[google-business] reviews.list returned ${reviews.length} review(s).`)
-
     return NextResponse.json({
       reviews,
       averageRating: result.body.averageRating ?? 0,
       totalReviewCount: result.body.totalReviewCount ?? reviews.length,
     })
-  } catch (error) {
-    console.error("[google-business] reviews route error", error)
+  } catch {
     return NextResponse.json(
       { error: "Error interno al obtener las reseñas de Google Business Profile." },
       { status: 500 },

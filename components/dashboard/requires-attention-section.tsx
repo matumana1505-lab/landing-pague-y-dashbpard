@@ -5,7 +5,7 @@ import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { AlertCircle, Check, Edit2, MessageSquare } from "lucide-react"
 import { Review } from "@/lib/types"
-import { getSuggestedResponseByTone } from "@/lib/mock-data"
+import { generateReviewResponse } from "@/lib/api-client"
 import {
   Dialog,
   DialogContent,
@@ -19,8 +19,12 @@ import { Textarea } from "@/components/ui/textarea"
 interface RequiresAttentionSectionProps {
   reviews: Review[]
   tone: "cercano" | "professional" | "formal"
+  businessId: string | null
+  businessName: string
+  additionalInstructions?: string
   onApproveResponse?: (reviewId: string, response: string) => void
   onRejectResponse?: (reviewId: string) => void
+  onGenerateResponse?: (reviewId: string, response: string) => void
 }
 
 interface ReviewDialogState {
@@ -33,8 +37,12 @@ interface ReviewDialogState {
 export function RequiresAttentionSection({
   reviews,
   tone,
+  businessId,
+  businessName,
+  additionalInstructions,
   onApproveResponse,
   onRejectResponse,
+  onGenerateResponse,
 }: RequiresAttentionSectionProps) {
   const [dialogState, setDialogState] = useState<ReviewDialogState>({
     isOpen: false,
@@ -62,11 +70,10 @@ export function RequiresAttentionSection({
   }
 
   const openDialog = (review: Review, mode: "view" | "edit" | "manual" = "view") => {
-    const suggestedResponse = getSuggestedResponseByTone(tone, review.rating)
     setDialogState({
       isOpen: true,
       reviewId: review.id,
-      response: suggestedResponse,
+      response: review.response ?? "",
       mode,
     })
   }
@@ -90,7 +97,6 @@ export function RequiresAttentionSection({
 
       <div className="grid gap-4">
         {negativeReviews.map((review) => {
-          const suggestedResponse = getSuggestedResponseByTone(tone, review.rating)
           const stars = Array(5)
             .fill(0)
             .map((_, i) => (
@@ -131,7 +137,7 @@ export function RequiresAttentionSection({
                         Respuesta sugerida por IA
                       </p>
                       <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
-                        <p className="text-slate-700">{suggestedResponse}</p>
+                        <p className="text-slate-700">{review.response ?? "Aún no se ha generado una respuesta."}</p>
                       </div>
                     </div>
                   )}
@@ -150,11 +156,36 @@ export function RequiresAttentionSection({
                 {!review.hasResponse && (
                   <div className="flex flex-col gap-2">
                     <Button
-                      onClick={() => openDialog(review, "view")}
+                      onClick={async () => {
+                        if (review.response) {
+                          openDialog(review, "view")
+                          return
+                        }
+
+                        if (!businessId) return
+
+                        try {
+                          const data = await generateReviewResponse({
+                            review: review.text,
+                            businessId,
+                            businessName,
+                            rating: review.rating,
+                            tone,
+                            additionalInstructions,
+                            reviewId: review.id,
+                            reviewSource: "mock",
+                          })
+
+                          onGenerateResponse?.(review.id, data.response)
+                          openDialog(review, "view")
+                        } catch {
+                          // El error se maneja en la UI si se desea en una iteración futura.
+                        }
+                      }}
                       className="bg-green-600 hover:bg-green-700 text-white gap-2 w-full"
                     >
                       <Check className="h-4 w-4" />
-                      Aprobar
+                      {review.response ? "Regenerar respuesta IA" : "Generar respuesta IA"}
                     </Button>
                     <Button
                       onClick={() => openDialog(review, "edit")}
