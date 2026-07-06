@@ -59,10 +59,6 @@ async function refreshGoogleAccessToken(token: JWT): Promise<JWT> {
     }
 
     const expiresAt = Math.floor(Date.now() / 1000) + (refreshed.expires_in ?? 3600)
-    console.log(
-      "[next-auth][refresh] Access token refreshed. New expiry (unix):",
-      expiresAt,
-    )
 
     return {
       ...token,
@@ -83,7 +79,6 @@ export const authConfig: NextAuthOptions = {
   // Use stateless JWT sessions (no DB adapter present). The token is encrypted
   // (JWE) with `secret` and stored in the session cookie.
   session: { strategy: "jwt" },
-  debug: process.env.NODE_ENV !== "production",
   providers: [
     GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID!,
@@ -120,14 +115,6 @@ export const authConfig: NextAuthOptions = {
         token.scope = account.scope
         token.error = undefined
 
-        console.log(
-          "[next-auth][jwt] Sign-in. accessToken:",
-          account.access_token ? "present" : "MISSING",
-          "| refreshToken:",
-          account.refresh_token ? "present" : "MISSING (re-consent needed for offline access)",
-          "| scope:",
-          account.scope,
-        )
       }
 
       if (profile) {
@@ -146,7 +133,6 @@ export const authConfig: NextAuthOptions = {
       }
 
       if (token.refreshToken) {
-        console.log("[next-auth][jwt] Access token expired or expiring soon; refreshing.")
         return refreshGoogleAccessToken(token)
       }
 
@@ -174,15 +160,6 @@ export const authConfig: NextAuthOptions = {
       session.accessToken = token.accessToken
       session.refreshToken = token.refreshToken
       session.error = token.error
-
-      console.log(
-        "[next-auth][session] accessToken:",
-        token.accessToken ? "present" : "MISSING",
-        "| refreshToken:",
-        token.refreshToken ? "present" : "MISSING",
-        "| error:",
-        token.error ?? "none",
-      )
 
       return session
     },

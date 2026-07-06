@@ -6,11 +6,6 @@ import { fetchUserProfile, fetchBusinesses, setActiveBusiness } from "@/lib/api-
 import { Loader2 } from "lucide-react"
 import Link from "next/link"
 
-type Business = {
-  id: string
-  name: string
-}
-
 type DashboardContextType = {
   sessionStatus: "loading" | "authenticated" | "unauthenticated"
   user?: any

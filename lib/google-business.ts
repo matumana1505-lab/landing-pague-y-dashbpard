@@ -59,7 +59,6 @@ export async function requireGoogleAccessToken(): Promise<
 export async function googleFetch<T = unknown>(
   url: string,
   accessToken: string,
-  label: string,
 ): Promise<GoogleFetchResult<T>> {
   const response = await fetch(url, {
     headers: {

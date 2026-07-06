@@ -1,6 +1,5 @@
 "use client"
 
-import React from "react"
 import { useRouter } from "next/navigation"
 import { AiSettingsPanel } from "@/components/dashboard/ai-settings-panel"
 import { Button } from "@/components/ui/button"

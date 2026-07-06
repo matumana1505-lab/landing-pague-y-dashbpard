@@ -51,7 +51,6 @@ export async function GET(request: NextRequest) {
     }>(
       `${LEGACY_MYBUSINESS_BASE}/accounts/${accountId}/locations/${locationId}/reviews`,
       accessToken,
-      `reviews.list(accounts/${accountId}/locations/${locationId})`,
     )
 
     if (!result.ok) {

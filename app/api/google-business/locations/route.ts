@@ -29,7 +29,6 @@ export async function GET(request: NextRequest) {
         LOCATION_READ_MASK,
       )}&pageSize=100`,
       accessToken,
-      `locations.list(accounts/${accountId})`,
     )
 
     if (!result.ok) {

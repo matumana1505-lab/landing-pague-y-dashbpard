@@ -1,5 +1,4 @@
 import type { ResponseTone } from "@/lib/types"
-import { TONE_DESCRIPTIONS } from "@/lib/ai-config/defaults"
 
 export interface ReviewPromptConfig {
   review: string

@@ -4,7 +4,6 @@ import { useCallback, useEffect, useRef, useState } from "react"
 import {
   fetchBusinessAiConfig,
   saveBusinessAiConfig,
-  setActiveBusiness,
 } from "@/lib/api-client"
 import { DEFAULT_AI_CONFIG } from "@/lib/ai-config/defaults"
 import type { BusinessAiConfigDto } from "@/lib/types"
@@ -39,8 +38,6 @@ export function useBusinessAiConfig({
 
   const pendingPatch = useRef<Partial<BusinessAiConfigDto>>({})
   const debounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const configRef = useRef(config)
-  configRef.current = config
 
   const loadConfig = useCallback(async (id: string) => {
     setIsLoading(true)

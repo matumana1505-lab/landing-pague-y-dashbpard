@@ -39,7 +39,6 @@ export async function GET() {
     const accountsResult = await googleFetch<{ accounts?: RawAccount[] }>(
       `${ACCOUNT_MANAGEMENT_BASE}/accounts`,
       accessToken,
-      "accounts.list",
     )
 
     if (!accountsResult.ok) {
@@ -65,7 +64,6 @@ export async function GET() {
             LOCATION_READ_MASK,
           )}&pageSize=100`,
           accessToken,
-          `locations.list(${account.name})`,
         )
 
         const locations: GoogleBusinessLocation[] =

@@ -23,7 +23,6 @@ interface RequiresAttentionSectionProps {
   businessName: string
   additionalInstructions?: string
   onApproveResponse?: (reviewId: string, response: string) => void
-  onRejectResponse?: (reviewId: string) => void
   onGenerateResponse?: (reviewId: string, response: string) => void
 }
 
@@ -41,7 +40,6 @@ export function RequiresAttentionSection({
   businessName,
   additionalInstructions,
   onApproveResponse,
-  onRejectResponse,
   onGenerateResponse,
 }: RequiresAttentionSectionProps) {
   const [dialogState, setDialogState] = useState<ReviewDialogState>({

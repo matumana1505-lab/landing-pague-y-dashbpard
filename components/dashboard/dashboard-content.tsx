@@ -1,7 +1,7 @@
 "use client"
 
 import { signIn } from "next-auth/react"
-import { useCallback, useEffect, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { useDashboard } from "@/components/dashboard/dashboard-shell"
 import { DashboardHeader } from "@/components/dashboard/dashboard-header"
 import { MetricsSummary } from "@/components/dashboard/metrics-summary"
@@ -31,15 +31,14 @@ import { Loader2 } from "lucide-react"
 
 export function DashboardContent() {
   const { sessionStatus, businesses: ctxBusinesses, activeBusinessId: ctxActiveBusinessId, setActiveBusinessId: setCtxActiveBusinessId, userProfile, loading: ctxLoading, reload: ctxReload, error: ctxError } = useDashboard()
-  const [businessProfile, setBusinessProfile] = useState<BusinessProfile | null>(null)
-  const [businesses, setBusinesses] = useState<PersistedBusiness[]>([])
-  const [activeBusinessId, setActiveBusinessId] = useState<string | null>(null)
   const [reviews, setReviews] = useState<Review[]>(mockReviews)
   const [onboardingState, setOnboardingState] = useState<OnboardingState>(mockOnboardingState)
   const [selectedReview, setSelectedReview] = useState<Review | null>(null)
   const [showResponseDialog, setShowResponseDialog] = useState(false)
   
   const [bootstrapError, setBootstrapError] = useState<string | null>(null)
+  const businesses = ctxBusinesses as PersistedBusiness[]
+  const activeBusinessId = ctxActiveBusinessId
 
   const {
     config: aiConfig,
@@ -53,12 +52,12 @@ export function DashboardContent() {
   })
 
   const userSettings: UserSettings = aiConfigToUserSettings(aiConfig)
+  const businessProfile = useMemo(() => {
+    const activeBusiness = businesses.find((business) => business.id === activeBusinessId)
+    return activeBusiness ? persistedBusinessToProfile(activeBusiness) : null
+  }, [businesses, activeBusinessId])
 
   useEffect(() => {
-    // derive local state from dashboard context
-    setBusinesses(ctxBusinesses as PersistedBusiness[])
-    setActiveBusinessId(ctxActiveBusinessId)
-
     if (userProfile) {
       if (userProfile.onboardingCompleted) {
         setOnboardingState({
@@ -69,7 +68,7 @@ export function DashboardContent() {
         })
       }
     }
-  }, [ctxBusinesses, ctxActiveBusinessId, userProfile])
+  }, [userProfile])
 
   useEffect(() => {
     const loadPersistedResponses = async () => {
@@ -105,8 +104,7 @@ export function DashboardContent() {
     })
   }
 
-  const handleBusinessSelected = (selectedBusiness: BusinessProfile) => {
-    setBusinessProfile(selectedBusiness)
+  const handleBusinessSelected = () => {
   }
 
   const handleBusinessChange = (businessId: string) => {
@@ -114,8 +112,6 @@ export function DashboardContent() {
     if (!business) return
 
     void setCtxActiveBusinessId(businessId)
-    setActiveBusinessId(businessId)
-    setBusinessProfile(persistedBusinessToProfile(business))
   }
 
   const handleViewResponse = (reviewId: string) => {
