@@ -5,7 +5,7 @@ import { useState } from "react"
 import { BusinessProfile, OnboardingState, UserSettings } from "@/lib/types"
 import { Step1ConnectGoogle } from "./step-1-connect-google"
 import { Step2CustomizeResponses } from "./step-2-customize-responses"
-import { Step3ConfigureAutomation } from "./step-3-configure-automation"
+
 
 interface OnboardingFlowProps {
   onComplete: (settings: UserSettings, business: BusinessProfile | null) => void
@@ -57,44 +57,38 @@ export function OnboardingFlow({
     }))
   }
 
-  const handleCustomizeResponses = (
-    tone: "cercano" | "professional" | "formal",
-    instructions: string
-  ) => {
-    setTempSettings((prev) => ({
-      ...prev,
-      tone,
-      additionalInstructions: instructions,
-    }))
-    setState((prev) => ({
-      ...prev,
-      responseToneSelected: true,
-      currentStep: "automation",
-    }))
+const handleCustomizeResponses = async (
+  tone: "cercano" | "professional" | "formal",
+  instructions: string
+) => {
+  const finalSettings: UserSettings = {
+    tone,
+    autoRespond: true,
+    alertNegativeReviews: true,
+    monthlySummary: true,
+    send3StarReviewsForReview: true,
+    additionalInstructions: instructions,
   }
 
-  const handleConfigureAutomation = async (config: {
-    autoRespondPositive: boolean
-    alertNegative: boolean
-    monthlySummary: boolean
-    send3StarForReview: boolean
-  }) => {
-    const finalSettings: UserSettings = {
-      tone: (tempSettings.tone as "cercano" | "professional" | "formal") || "professional",
-      autoRespond: config.autoRespondPositive,
-      alertNegativeReviews: config.alertNegative,
-      monthlySummary: config.monthlySummary,
-      send3StarReviewsForReview: config.send3StarForReview,
-      additionalInstructions: tempSettings.additionalInstructions || "",
-    }
+  setTempSettings((prev) => ({
+    ...prev,
+    tone,
+    additionalInstructions: instructions,
+  }))
 
-    setIsSubmitting(true)
-    try {
-      await onComplete(finalSettings, selectedBusiness)
-    } finally {
-      setIsSubmitting(false)
-    }
+  setState((prev) => ({
+    ...prev,
+    responseToneSelected: true,
+  }))
+
+  setIsSubmitting(true)
+
+  try {
+    await onComplete(finalSettings, selectedBusiness)
+  } finally {
+    setIsSubmitting(false)
   }
+}
 
   return (
     <>
@@ -112,12 +106,3 @@ export function OnboardingFlow({
           businessName={selectedBusiness?.name}
         />
       )}
-      {state.currentStep === "automation" && (
-        <Step3ConfigureAutomation
-          onActivate={handleConfigureAutomation}
-          isLoading={isSubmitting}
-        />
-      )}
-    </>
-  )
-}
