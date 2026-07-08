@@ -87,8 +87,7 @@ const handleCustomizeResponses = async (
     await onComplete(finalSettings, selectedBusiness)
   } finally {
     setIsSubmitting(false)
-  }
-}
+  }}
 
   return (
     <>
@@ -104,5 +103,8 @@ const handleCustomizeResponses = async (
         <Step2CustomizeResponses
           onContinue={handleCustomizeResponses}
           businessName={selectedBusiness?.name}
-        />
-      )}
+      />
+    )}
+  </>
+)
+}
