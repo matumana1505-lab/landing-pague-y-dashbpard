@@ -1,4 +1,4 @@
-import type { GoogleBusinessClient, GoogleReview } from "./client"
+﻿import type { GoogleBusinessClient, GoogleReview } from "./client"
 
 export class MockGoogleBusinessClient implements GoogleBusinessClient {
   async getNewReviews(locationId: string, since: Date): Promise<GoogleReview[]> {

@@ -1,4 +1,4 @@
-import { prisma } from "@/lib/prisma"
+﻿import { prisma } from "@/lib/prisma"
 import { generateReviewResponse } from "@/lib/ai/gemini"
 import type { GoogleBusinessClient } from "@/lib/google-business/client"
 
@@ -34,7 +34,6 @@ async function processReviewsForBusiness(
   }
 ): Promise<void> {
   const since = new Date(Date.now() - 24 * 60 * 60 * 1000)
-
   const reviews = await client.getNewReviews(business.googleLocationId, since)
 
   for (const review of reviews) {

@@ -1,4 +1,4 @@
-export interface GoogleReview {
+﻿export interface GoogleReview {
   googleReviewId: string
   reviewerName: string
   rating: number
