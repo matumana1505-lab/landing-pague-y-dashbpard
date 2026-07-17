@@ -1,4 +1,4 @@
-﻿import { NextResponse } from "next/server"
+import { NextResponse } from "next/server"
 import { processReviewsForAllBusinesses } from "@/lib/workers/review-processor"
 import { MockGoogleBusinessClient } from "@/lib/google-business/mock-client"
 
