@@ -1,6 +1,6 @@
 "use client"
 
-import { Button } from "@/components/ui/button"
+import { PrimaryCTAButton } from "@/components/premium-buttons"
 import { Check } from "lucide-react"
 import { motion, type Variants } from "framer-motion"
 import { signIn } from "next-auth/react"
@@ -144,13 +144,15 @@ export function PricingSection() {
 
             {/* CTA - DOMINANT */}
             <div className="text-center">
-              <Button
+              <PrimaryCTAButton
                 size="lg"
+                showIcon
                 onClick={() => signIn("google", { callbackUrl: "/dashboard" })}
-                className="w-full sm:w-auto bg-blue-600 text-white hover:bg-blue-500 rounded-full px-14 h-14 text-base font-semibold shadow-lg shadow-blue-600/20 transition-all duration-200 hover:shadow-xl hover:shadow-blue-600/30 hover:scale-[1.02] hover:brightness-110"
+                wrapperClassName="w-full sm:w-auto"
+                className="w-full sm:w-auto"
               >
                 Empezar prueba gratuita
-              </Button>
+              </PrimaryCTAButton>
               <p className="mt-4 text-sm text-gray-500">
                 Probá el servicio gratis durante 14 días. Después de la prueba, el valor es de $49.000 ARS por mes. Cancelá cuando quieras.
               </p>

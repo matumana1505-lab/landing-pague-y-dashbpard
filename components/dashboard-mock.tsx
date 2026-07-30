@@ -63,20 +63,42 @@ const juanResponseText =
   "¡Gracias Juan! Nos encanta saber que disfrutaste la pizza. Te esperamos pronto."
 
 const weeklyData = [
-  { day: "Lun", value: 3 },
-  { day: "Mar", value: 5 },
-  { day: "Mié", value: 2 },
-  { day: "Jue", value: 6 },
-  { day: "Vie", value: 8 },
-  { day: "Sáb", value: 9 },
-  { day: "Dom", value: 4 },
+  { day: "Lun", value: 3, rating: 4.3 },
+  { day: "Mar", value: 5, rating: 4.5 },
+  { day: "Mié", value: 2, rating: 4.0 },
+  { day: "Jue", value: 7, rating: 4.8 },
+  { day: "Vie", value: 4, rating: 4.4 },
+  { day: "Sáb", value: 8, rating: 4.7 },
+  { day: "Dom", value: 6, rating: 4.6 },
 ]
 
 const tones = [
-  { id: "Cercano", icon: "😊", desc: "Cálido y cercano" },
+  { id: "Cercano", icon: "😊", desc: "Cálido y personal" },
   { id: "Profesional", icon: "💼", desc: "Claro y directo" },
   { id: "Formal", icon: "🎩", desc: "Serio y protocolar" },
 ] as const
+
+const toneExamples: Record<(typeof tones)[number]["id"], string> = {
+  Cercano: "¡Gracias María! Nos hiciste el día con tu comentario. ¡Te esperamos de vuelta!",
+  Profesional:
+    "Gracias María por tu reseña. Nos alegra que haya disfrutado su visita. Quedamos a su disposición.",
+  Formal: "Estimada María, agradecemos su comentario. Es un honor contar con su preferencia. Saludos.",
+}
+
+const quickChips = [
+  { label: "+ Usar voseo", text: "Usar voseo." },
+  { label: "+ Mencionar el nombre", text: "Mencionar siempre el nombre del cliente." },
+  { label: "+ Sin emojis", text: "Nunca usar emojis." },
+  { label: "+ Mencionar estacionamiento", text: "Mencionar que tenemos estacionamiento gratuito." },
+]
+
+const starDistribution = [
+  { star: 5, percent: 60, color: "#3b82f6" },
+  { star: 4, percent: 25, color: "#60a5fa" },
+  { star: 3, percent: 10, color: "#9ca3af" },
+  { star: 2, percent: 3, color: "#f97316" },
+  { star: 1, percent: 2, color: "#ef4444" },
+]
 
 const alerts = [
   {
@@ -297,23 +319,95 @@ function ToggleRow({
   )
 }
 
-function MetricCard({ children, label }: { children: React.ReactNode; label: string }) {
+function Sparkline({ values, color = "#22c55e" }: { values: number[]; color?: string }) {
+  const w = 64
+  const h = 24
+  const min = Math.min(...values)
+  const max = Math.max(...values)
+  const range = max - min || 1
+  const points = values.map((v, i) => {
+    const x = (i / (values.length - 1)) * w
+    const y = h - ((v - min) / range) * h
+    return `${x},${y}`
+  })
   return (
-    <div className="bg-[#0f1628] border border-white/[0.06] rounded-xl px-3 py-3">
-      <p className="text-gray-500 text-[11px] leading-tight">{label}</p>
-      <p className="text-white text-base font-semibold mt-1">{children}</p>
-    </div>
+    <svg viewBox={`0 0 ${w} ${h}`} className="w-16 h-6 flex-shrink-0">
+      <polyline
+        points={points.join(" ")}
+        fill="none"
+        stroke={color}
+        strokeWidth={1.8}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  )
+}
+
+function CircularProgress({
+  percent,
+  mounted,
+  size = 48,
+}: {
+  percent: number
+  mounted: boolean
+  size?: number
+}) {
+  const strokeWidth = 4
+  const radius = (size - strokeWidth) / 2
+  const circumference = 2 * Math.PI * radius
+  const offset = mounted ? circumference - (percent / 100) * circumference : circumference
+  return (
+    <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} className="-rotate-90 flex-shrink-0">
+      <circle
+        cx={size / 2}
+        cy={size / 2}
+        r={radius}
+        fill="none"
+        stroke="rgba(255,255,255,0.08)"
+        strokeWidth={strokeWidth}
+      />
+      <circle
+        cx={size / 2}
+        cy={size / 2}
+        r={radius}
+        fill="none"
+        stroke="#3b82f6"
+        strokeWidth={strokeWidth}
+        strokeDasharray={circumference}
+        strokeDashoffset={offset}
+        strokeLinecap="round"
+        style={{ transition: "stroke-dashoffset 1s ease-out" }}
+      />
+    </svg>
   )
 }
 
 function StatsTab({ mountKey }: { mountKey: number }) {
   const [mounted, setMounted] = useState(false)
+  const [chartView, setChartView] = useState<"Calificación" | "Volumen">("Volumen")
+  const [period, setPeriod] = useState("Esta semana")
+  const [periodOpen, setPeriodOpen] = useState(false)
+  const [hoverDay, setHoverDay] = useState<number | null>(null)
 
   useEffect(() => {
     setMounted(false)
     const raf = requestAnimationFrame(() => setMounted(true))
     return () => cancelAnimationFrame(raf)
   }, [mountKey])
+
+  const maxY = 10
+  const chartW = 280
+  const chartH = 110
+  const barWidth = 22
+  const totalW = chartW + 20
+  const gap = (chartW - weeklyData.length * barWidth) / (weeklyData.length + 1)
+  const average = weeklyData.reduce((s, d) => s + d.value, 0) / weeklyData.length
+  const avgY = chartH - (average / maxY) * chartH
+  const barsLayout = weeklyData.map((d, i) => {
+    const x = 16 + gap + i * (barWidth + gap)
+    return { ...d, x, xPercent: ((x + barWidth / 2) / totalW) * 100 }
+  })
 
   return (
     <motion.div
@@ -322,59 +416,235 @@ function StatsTab({ mountKey }: { mountKey: number }) {
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       transition={{ duration: 0.25 }}
-      className="resply-mock-scroll flex-1 overflow-y-auto p-5"
+      className="resply-mock-scroll flex-1 overflow-y-auto p-5 space-y-4"
     >
-      <div className="bg-[#0f1628] border border-white/[0.06] rounded-xl p-4 mb-4 flex items-center justify-between">
-        <p className="text-white text-2xl font-semibold">
-          4.6★ <span className="text-gray-500 text-xs font-normal align-middle">calificación promedio</span>
-        </p>
-        <span className="text-blue-400 text-xs font-medium bg-blue-500/10 border border-blue-500/20 px-2 py-1 rounded-full">
-          +0.4 vs mes anterior
-        </span>
+      {/* Header — period selector (visual only) */}
+      <div className="flex justify-end relative">
+        <button
+          onClick={() => setPeriodOpen((v) => !v)}
+          className="flex items-center gap-1.5 bg-[#0f1628] border border-white/10 text-gray-300 text-xs px-3 py-1.5 rounded-lg hover:border-white/20 transition-colors"
+        >
+          {period}
+          <span className="text-gray-500 text-[10px]">▾</span>
+        </button>
+        <AnimatePresence>
+          {periodOpen && (
+            <motion.div
+              initial={{ opacity: 0, y: -6 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -6 }}
+              transition={{ duration: 0.15 }}
+              className="absolute top-9 right-0 z-10 bg-[#0f1628] border border-white/10 rounded-lg overflow-hidden shadow-lg w-36"
+            >
+              {["Esta semana", "Este mes", "Últimos 3 meses"].map((opt) => (
+                <button
+                  key={opt}
+                  onClick={() => {
+                    setPeriod(opt)
+                    setPeriodOpen(false)
+                  }}
+                  className={`block w-full text-left px-3 py-2 text-xs transition-colors ${
+                    opt === period ? "text-blue-400 bg-blue-500/10" : "text-gray-400 hover:bg-white/5"
+                  }`}
+                >
+                  {opt}
+                </button>
+              ))}
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
 
-      <div className="bg-[#0f1628] border border-white/[0.06] rounded-xl p-4 mb-4">
-        <p className="text-gray-400 text-xs font-medium mb-4">Reseñas por día</p>
-        <svg viewBox="0 0 280 140" className="w-full h-36">
-          {weeklyData.map((d, i) => {
-            const barWidth = 24
-            const gap = (280 - weeklyData.length * barWidth) / (weeklyData.length + 1)
-            const x = gap + i * (barWidth + gap)
-            const maxH = 100
-            const targetH = (d.value / 9) * maxH
-            const h = mounted ? targetH : 0
-            const y = 118 - h
-            return (
-              <g key={d.day}>
-                <rect
-                  x={x}
-                  y={y}
-                  width={barWidth}
-                  height={h}
-                  rx={4}
-                  fill="#3b82f6"
-                  fillOpacity={0.85}
+      {/* Fila 1 — metric cards */}
+      <div className="grid grid-cols-3 gap-3">
+        <div className="bg-[#0f1628] border border-white/[0.06] rounded-xl p-3">
+          <p className="text-gray-500 text-[11px]">Calificación promedio</p>
+          <div className="flex items-end justify-between mt-1">
+            <p className="text-white text-2xl font-semibold">
+              <Counter to={4.6} decimals={1} /> <span className="text-yellow-400 text-lg">★</span>
+            </p>
+            <Sparkline values={[4.1, 4.2, 4.3, 4.5, 4.6]} />
+          </div>
+          <p className="text-emerald-400 text-[11px] mt-1">↑ +0.4 vs mes anterior</p>
+        </div>
+
+        <div className="bg-[#0f1628] border border-white/[0.06] rounded-xl p-3">
+          <p className="text-gray-500 text-[11px]">Reseñas este mes</p>
+          <p className="text-white text-2xl font-semibold mt-1">
+            <Counter to={28} />
+          </p>
+          <p className="text-emerald-400 text-[11px] mt-1">↑ +6 vs mes anterior</p>
+          <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden mt-2">
+            <div
+              className="h-full bg-blue-500 rounded-full"
+              style={{
+                width: mounted ? `${(28 / 30) * 100}%` : "0%",
+                transition: "width 0.8s ease-out 0.2s",
+              }}
+            />
+          </div>
+          <p className="text-gray-600 text-[10px] mt-1">28/30 objetivo del mes</p>
+        </div>
+
+        <div className="bg-[#0f1628] border border-white/[0.06] rounded-xl p-3 flex items-center justify-between">
+          <div>
+            <p className="text-gray-500 text-[11px]">Tasa de respuesta</p>
+            <p className="text-white text-2xl font-semibold mt-1">
+              <Counter to={100} suffix="%" />
+            </p>
+            <p className="text-gray-500 text-[11px] mt-1">12/12 respondidas</p>
+          </div>
+          <CircularProgress percent={100} mounted={mounted} />
+        </div>
+      </div>
+
+      {/* Fila 2 — gráfico principal */}
+      <div className="bg-[#0f1628] border border-white/[0.06] rounded-xl p-4">
+        <div className="flex items-center justify-between mb-3">
+          <p className="text-gray-400 text-xs font-medium">Reseñas por día</p>
+          <div className="flex gap-1 bg-white/5 border border-white/10 rounded-full p-0.5">
+            {(["Calificación", "Volumen"] as const).map((v) => (
+              <button
+                key={v}
+                onClick={() => setChartView(v)}
+                className={`px-2.5 py-1 rounded-full text-[10px] font-medium transition-colors ${
+                  chartView === v ? "bg-blue-600 text-white" : "text-gray-500"
+                }`}
+              >
+                {v}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="relative">
+          <svg viewBox={`0 0 ${totalW} ${chartH + 24}`} className="w-full h-40">
+            <defs>
+              <linearGradient id="barGradient" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="#3b82f6" />
+                <stop offset="100%" stopColor="#1d4ed8" />
+              </linearGradient>
+            </defs>
+
+            {[0, 5, 10].map((v) => {
+              const y = chartH - (v / maxY) * chartH
+              return (
+                <g key={v}>
+                  <text x={2} y={y + 3} fontSize="8" fill="#4b5563">
+                    {v}
+                  </text>
+                  <line x1={16} y1={y} x2={chartW + 16} y2={y} stroke="rgba(255,255,255,0.04)" strokeWidth={1} />
+                </g>
+              )
+            })}
+
+            <line
+              x1={16}
+              y1={avgY}
+              x2={chartW + 16}
+              y2={avgY}
+              stroke="#60a5fa"
+              strokeWidth={1}
+              strokeDasharray="4 3"
+              opacity={0.6}
+            />
+
+            {barsLayout.map((d, i) => {
+              const targetH = (d.value / maxY) * chartH
+              const h = mounted ? targetH : 0
+              const y = chartH - h
+              return (
+                <g key={d.day}>
+                  <text
+                    x={d.x + barWidth / 2}
+                    y={y - 6}
+                    textAnchor="middle"
+                    fontSize="9"
+                    fill="#e5e7eb"
+                    style={{ opacity: mounted ? 1 : 0, transition: `opacity 0.3s ease-out ${i * 0.08 + 0.4}s` }}
+                  >
+                    {d.value}
+                  </text>
+                  <rect
+                    x={d.x}
+                    y={y}
+                    width={barWidth}
+                    height={h}
+                    rx={4}
+                    fill="url(#barGradient)"
+                    style={{ transition: `height 0.6s ease-out ${i * 0.08}s, y 0.6s ease-out ${i * 0.08}s` }}
+                  />
+                  <text x={d.x + barWidth / 2} y={chartH + 16} textAnchor="middle" fontSize="9" fill="#6b7280">
+                    {d.day}
+                  </text>
+                </g>
+              )
+            })}
+          </svg>
+
+          <div className="absolute inset-0">
+            {barsLayout.map((d, i) => (
+              <div
+                key={d.day}
+                className="absolute top-0 h-full -translate-x-1/2"
+                style={{ left: `${d.xPercent}%`, width: `${(barWidth / totalW) * 100 + 6}%` }}
+                onMouseEnter={() => setHoverDay(i)}
+                onMouseLeave={() => setHoverDay((v) => (v === i ? null : v))}
+              >
+                {hoverDay === i && (
+                  <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-full bg-[#1a2338] border border-white/10 text-[10px] text-gray-200 px-2 py-1 rounded-md whitespace-nowrap shadow-lg z-10">
+                    {d.day}: {d.value} reseñas · {d.rating}★
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Fila 3 — insights */}
+      <div className="grid grid-cols-2 gap-3">
+        <div className="bg-[#0f1628] border border-white/[0.06] rounded-xl p-3 flex items-center gap-3">
+          <span className="text-2xl">🏆</span>
+          <div>
+            <p className="text-gray-500 text-[11px]">Mejor día</p>
+            <p className="text-white text-base font-semibold">Jueves</p>
+            <p className="text-gray-500 text-[11px]">7 reseñas · 4.8★ promedio</p>
+          </div>
+        </div>
+        <div className="bg-[#0f1628] border border-white/[0.06] rounded-xl p-3 flex items-center gap-3">
+          <span className="text-2xl">📈</span>
+          <div>
+            <p className="text-gray-500 text-[11px]">Tendencia</p>
+            <p className="text-emerald-400 text-base font-semibold">↑ En alza</p>
+            <p className="text-gray-500 text-[11px]">Tu calificación subió 0.4 puntos este mes</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Fila 4 — distribución de estrellas */}
+      <div className="bg-[#0f1628] border border-white/[0.06] rounded-xl p-4">
+        <p className="text-gray-400 text-xs font-medium mb-3">Distribución de estrellas</p>
+        <div className="space-y-2">
+          {starDistribution.map((d, i) => (
+            <div key={d.star} className="flex items-center gap-2">
+              <span className="text-gray-400 text-[11px] w-8 flex-shrink-0 flex items-center gap-0.5">
+                {d.star} <span className="text-yellow-400">★</span>
+              </span>
+              <div className="flex-1 h-1.5 bg-white/5 rounded-full overflow-hidden">
+                <div
+                  className="h-full rounded-full"
                   style={{
-                    transition: `height 0.6s ease-out ${i * 0.08}s, y 0.6s ease-out ${i * 0.08}s`,
+                    width: mounted ? `${d.percent}%` : "0%",
+                    backgroundColor: d.color,
+                    transition: `width 0.7s ease-out ${i * 0.06 + 0.15}s`,
                   }}
                 />
-                <text x={x + barWidth / 2} y={134} textAnchor="middle" fontSize="9" fill="#6b7280">
-                  {d.day}
-                </text>
-              </g>
-            )
-          })}
-        </svg>
-      </div>
-
-      <div className="grid grid-cols-3 gap-3">
-        <MetricCard label="Reseñas">
-          <Counter to={28} suffix=" reseñas" />
-        </MetricCard>
-        <MetricCard label="Respondidas">
-          <Counter to={100} suffix="%" />
-        </MetricCard>
-        <MetricCard label="Tiempo de respuesta">&lt; 2min</MetricCard>
+              </div>
+              <span className="text-gray-500 text-[11px] w-8 text-right flex-shrink-0">{d.percent}%</span>
+            </div>
+          ))}
+        </div>
       </div>
     </motion.div>
   )
@@ -382,6 +652,11 @@ function StatsTab({ mountKey }: { mountKey: number }) {
 
 function SettingsTab() {
   const [tone, setTone] = useState<(typeof tones)[number]["id"]>("Profesional")
+  const [instructions, setInstructions] = useState("Responder siempre en voseo y mencionar el nombre del cliente.")
+
+  const addChip = (text: string) => {
+    setInstructions((prev) => (prev.trim().length ? `${prev.trim()} ${text}` : text))
+  }
 
   return (
     <motion.div
@@ -390,8 +665,9 @@ function SettingsTab() {
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       transition={{ duration: 0.25 }}
-      className="resply-mock-scroll flex-1 overflow-y-auto p-5 space-y-5"
+      className="resply-mock-scroll flex-1 overflow-y-auto p-5 space-y-6"
     >
+      {/* Sección 1 — Tono de respuesta */}
       <div>
         <p className="text-gray-400 text-xs font-medium mb-2">Tono de respuesta</p>
         <div className="grid grid-cols-3 gap-2">
@@ -411,34 +687,69 @@ function SettingsTab() {
             </button>
           ))}
         </div>
-      </div>
 
-      <div>
-        <p className="text-gray-400 text-xs font-medium mb-2">Instrucciones personalizadas</p>
-        <div className="bg-white/5 border border-white/10 rounded-xl p-3">
-          <p className="text-gray-300 text-xs leading-relaxed">
-            Responder siempre en voseo, mencionar el nombre del cliente y agradecer la visita.
-          </p>
+        <div className="mt-3">
+          <p className="text-gray-500 text-[11px] mb-1.5">Vista previa de respuesta</p>
+          <div className="bg-[#0f1628] border border-white/[0.06] rounded-xl p-3 min-h-[4.5rem]">
+            <AnimatePresence mode="wait">
+              <motion.p
+                key={tone}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.25 }}
+                className="text-gray-300 text-xs leading-relaxed"
+              >
+                {toneExamples[tone]}
+              </motion.p>
+            </AnimatePresence>
+          </div>
         </div>
       </div>
 
+      {/* Sección 2 — Instrucciones personalizadas */}
+      <div>
+        <h3 className="text-white text-sm font-semibold">Personalizá cómo responde la IA</h3>
+        <p className="text-gray-500 text-[11px] mb-2">
+          Escribí cualquier instrucción. La IA la seguirá en todas las respuestas.
+        </p>
+        <textarea
+          value={instructions}
+          onChange={(e) => setInstructions(e.target.value)}
+          placeholder="Ej: Siempre mencioná el nombre del cliente, usá voseo, nunca uses emojis, mencioná que tenemos estacionamiento gratuito..."
+          className="w-full h-20 bg-[#0f1628] border border-white/10 rounded-lg px-3 py-2 text-xs text-white placeholder:text-gray-600 resize-none focus:outline-none focus:border-blue-500/60 transition-colors"
+        />
+        <div className="flex flex-wrap gap-1.5 mt-2">
+          {quickChips.map((chip) => (
+            <button
+              key={chip.label}
+              onClick={() => addChip(chip.text)}
+              className="text-[11px] text-blue-400 bg-blue-500/10 border border-blue-500/20 px-2 py-1 rounded-full hover:bg-blue-500/20 transition-colors"
+            >
+              {chip.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Sección 3 — Automatización */}
       <div className="space-y-3">
         <ToggleRow
           label="Respuestas automáticas"
-          description="Publicar respuestas sin revisión manual"
+          description="Publicar sin revisión manual"
           defaultOn
           delayMs={400}
         />
         <ToggleRow
           label="Alertas reseñas negativas"
-          description="Avisarme apenas llega una reseña negativa"
+          description="Avisarme apenas llegue una negativa"
           defaultOn
           delayMs={900}
         />
       </div>
 
-      <div className="flex items-center gap-1.5 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[11px] px-2.5 py-1 rounded-full w-fit">
-        Guardado automáticamente ✓
+      <div className="flex items-center gap-1.5 bg-white/5 border border-white/10 text-gray-500 text-[11px] px-2.5 py-1 rounded-full w-fit">
+        ✓ Guardado automáticamente
       </div>
     </motion.div>
   )

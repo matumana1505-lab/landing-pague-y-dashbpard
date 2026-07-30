@@ -1,6 +1,6 @@
 "use client"
 
-import { Button } from "@/components/ui/button"
+import { PrimaryCTAButton } from "@/components/premium-buttons"
 import { signIn } from "next-auth/react"
 
 export function MidPageCTA() {
@@ -10,13 +10,9 @@ export function MidPageCTA() {
         <p className="text-base sm:text-lg text-gray-400 mb-5">
           Dejá de perder tiempo respondiendo reseñas una por una.
         </p>
-        <Button
-          size="lg"
-          onClick={() => signIn("google", { callbackUrl: "/dashboard" })}
-          className="bg-blue-600 text-white hover:bg-blue-500 rounded-full px-10 h-14 text-base font-semibold shadow-lg shadow-blue-600/20 transition-all duration-200 hover:shadow-xl hover:shadow-blue-600/30 hover:scale-[1.02] hover:brightness-110"
-        >
+        <PrimaryCTAButton onClick={() => signIn("google", { callbackUrl: "/dashboard" })}>
           Probar gratis
-        </Button>
+        </PrimaryCTAButton>
       </div>
     </section>
   )
