@@ -1,141 +1,172 @@
 "use client"
 
 import { animate, motion, useInView, type Variants } from "framer-motion"
-import { useEffect, useRef, useState } from "react"
-import { UtensilsCrossed, Dumbbell, Scissors } from "lucide-react"
+import { useEffect, useRef, useState, type ComponentType, type ReactNode } from "react"
+import { Store, Star, CheckCircle2, Clock } from "lucide-react"
 
-const stats = [
-  { icon: UtensilsCrossed, value: 6, label: "Restaurantes" },
-  { icon: Dumbbell, value: 5, label: "Gimnasios" },
-  { icon: Scissors, value: 4, label: "Peluquerías" },
-]
-
-const businesses = [
-  "La Pizzería del Centro",
-  "Gym Pro Rosario",
-  "Estética Valentina",
-  "Hotel Plaza",
-  "Odontología Del Valle",
-]
-
-const headerContainerVariants: Variants = {
-  hidden: {},
-  visible: { transition: { staggerChildren: 0.15 } },
+const sectionVariants: Variants = {
+  hidden: { opacity: 0, y: 40 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease: "easeOut" } },
 }
 
-const titleVariants: Variants = {
-  hidden: { opacity: 0, x: -40 },
-  visible: { opacity: 1, x: 0, transition: { duration: 0.6, ease: "easeOut" } },
-}
-
-const underlineVariants: Variants = {
-  hidden: { scaleX: 0 },
-  visible: { scaleX: 1, transition: { duration: 0.5, ease: "easeOut" } },
-}
-
-const containerVariants: Variants = {
+const metricContainerVariants: Variants = {
   hidden: {},
   visible: { transition: { staggerChildren: 0.1 } },
 }
 
-const cardVariants: Variants = {
-  hidden: { opacity: 0, scale: 0.9 },
-  visible: { opacity: 1, scale: 1, transition: { duration: 0.5, ease: "easeOut" } },
+const metricItemVariants: Variants = {
+  hidden: { opacity: 0, y: 20 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: "easeOut" } },
 }
 
-function Counter({ value }: { value: number }) {
-  const ref = useRef<HTMLSpanElement>(null)
-  const isInView = useInView(ref, { once: true, margin: "-80px" })
+const categoryContainerVariants: Variants = {
+  hidden: {},
+  visible: { transition: { staggerChildren: 0.08, delayChildren: 0.4 } },
+}
+
+const categoryItemVariants: Variants = {
+  hidden: { opacity: 0 },
+  visible: { opacity: 1, transition: { duration: 0.5, ease: "easeOut" } },
+}
+
+const categories = [
+  { emoji: "🍽️", label: "6 restaurantes" },
+  { emoji: "💪", label: "5 gimnasios" },
+  { emoji: "✂️", label: "4 peluquerías" },
+]
+
+function AnimatedNumber({ to, decimals = 0, inView }: { to: number; decimals?: number; inView: boolean }) {
   const [display, setDisplay] = useState(0)
-  const [done, setDone] = useState(false)
 
   useEffect(() => {
-    if (!isInView) return
-    const controls = animate(0, value, {
-      duration: 1.4,
+    if (!inView) return
+    const controls = animate(0, to, {
+      duration: 1.5,
       ease: "easeOut",
-      onUpdate: (v) => setDisplay(Math.round(v)),
-      onComplete: () => setDone(true),
+      onUpdate: (v) => setDisplay(v),
     })
     return () => controls.stop()
-  }, [isInView, value])
+  }, [inView, to])
 
+  return <>{display.toFixed(decimals)}</>
+}
+
+function MetricItem({
+  icon: Icon,
+  iconClassName,
+  numberSize = "text-6xl md:text-8xl",
+  label,
+  children,
+}: {
+  icon: ComponentType<{ className?: string }>
+  iconClassName: string
+  numberSize?: string
+  label: string
+  children: ReactNode
+}) {
   return (
-    <motion.span
-      ref={ref}
-      animate={done ? { scale: [1, 1.2, 1] } : {}}
-      transition={{ duration: 0.4, ease: "easeOut" }}
-      className="inline-block"
-    >
-      {display}
-    </motion.span>
+    <motion.div variants={metricItemVariants} className="flex-1 flex flex-col items-center px-6 py-8 md:py-0">
+      <Icon className={`w-5 h-5 mb-4 ${iconClassName}`} />
+      <p
+        className={`${numberSize} font-bold text-white tabular-nums transition-[text-shadow] duration-300 hover:[text-shadow:0_0_30px_rgba(59,130,246,0.3)]`}
+      >
+        {children}
+      </p>
+      <p className="text-sm text-gray-400 mt-2">{label}</p>
+    </motion.div>
+  )
+}
+
+function Divider() {
+  return (
+    <div
+      aria-hidden
+      className="hidden md:block w-px self-stretch bg-gradient-to-b from-transparent via-white/10 to-transparent"
+    />
   )
 }
 
 export function SocialProofSection() {
+  const rowRef = useRef<HTMLDivElement>(null)
+  const rowInView = useInView(rowRef, { once: true, margin: "-100px" })
+
   return (
-    <section className="py-16 md:py-24 px-4 sm:px-6 lg:px-8 bg-[#0a0f1e] border-t border-white/5">
-      <div className="max-w-4xl mx-auto text-center">
+    <section className="relative py-32 px-4 sm:px-6 lg:px-8 bg-[#0a0f1e] overflow-hidden">
+      <div
+        aria-hidden
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          background: "radial-gradient(ellipse 60% 40% at 50% 50%, rgba(59,130,246,0.08) 0%, transparent 70%)",
+        }}
+      />
+
+      <motion.div
+        initial="hidden"
+        whileInView="visible"
+        viewport={{ once: true, margin: "-100px" }}
+        variants={sectionVariants}
+        className="relative max-w-5xl mx-auto text-center"
+      >
+        <p className="text-xs font-semibold tracking-[0.3em] text-blue-400/70 uppercase mb-14 md:mb-16">
+          Números que hablan
+        </p>
+
         <motion.div
-          variants={headerContainerVariants}
+          ref={rowRef}
+          variants={metricContainerVariants}
           initial="hidden"
           whileInView="visible"
           viewport={{ once: true, margin: "-100px" }}
-          className="mb-10 md:mb-14"
+          className="flex flex-col md:flex-row items-center md:items-stretch justify-center gap-y-10 md:gap-y-0"
         >
-          <motion.p
-            variants={titleVariants}
-            className="text-gray-500 text-xs font-medium uppercase tracking-widest"
+          <MetricItem icon={Store} iconClassName="text-blue-400" label="Negocios activos">
+            <AnimatedNumber to={15} inView={rowInView} />+
+          </MetricItem>
+
+          <Divider />
+
+          <MetricItem icon={Star} iconClassName="text-yellow-400" label="Calificación promedio">
+            <AnimatedNumber to={4.8} decimals={1} inView={rowInView} />
+            <span className="text-yellow-400">★</span>
+          </MetricItem>
+
+          <Divider />
+
+          <MetricItem icon={CheckCircle2} iconClassName="text-blue-400" label="Reseñas respondidas">
+            <AnimatedNumber to={98} inView={rowInView} />%
+          </MetricItem>
+
+          <Divider />
+
+          <MetricItem
+            icon={Clock}
+            iconClassName="text-blue-400"
+            numberSize="text-5xl md:text-7xl"
+            label="Tiempo de respuesta"
           >
-            Negocios que confían en Resply
-          </motion.p>
-          <motion.span
-            variants={underlineVariants}
-            className="block h-[2px] w-12 bg-blue-500 rounded-full mx-auto mt-4 origin-left"
-          />
+            &lt;2min
+          </MetricItem>
         </motion.div>
 
-        <motion.div
-          variants={containerVariants}
-          initial="hidden"
-          whileInView="visible"
-          viewport={{ once: true, margin: "-100px" }}
-          className="grid sm:grid-cols-3 sm:divide-x sm:divide-white/10"
-        >
-          {stats.map((stat) => {
-            const Icon = stat.icon
-            return (
-              <motion.div
-                key={stat.label}
-                variants={cardVariants}
-                className="flex flex-col items-center px-4 py-6 sm:py-0"
-              >
-                <motion.div
-                  whileHover={{ rotate: 10, scale: 1.08 }}
-                  transition={{ type: "spring", stiffness: 300, damping: 12 }}
-                  className="w-12 h-12 rounded-xl bg-blue-500/10 flex items-center justify-center mb-4"
-                >
-                  <Icon className="w-6 h-6 text-blue-400" />
-                </motion.div>
-                <p className="text-4xl sm:text-5xl font-bold text-blue-400 tabular-nums">
-                  <Counter value={stat.value} />
-                </p>
-                <p className="text-white font-medium mt-2">{stat.label}</p>
-                <p className="text-gray-400 text-sm mt-1">negocios activos</p>
-              </motion.div>
-            )
-          })}
-        </motion.div>
-
-        <div className="mt-14 md:mt-16 flex flex-wrap items-center justify-center gap-x-3 gap-y-2 text-gray-600 text-xs sm:text-sm">
-          {businesses.map((name, i) => (
-            <span key={name} className="flex items-center gap-3">
-              {name}
-              {i < businesses.length - 1 && <span className="text-gray-700">·</span>}
-            </span>
-          ))}
+        <div className="border-t border-white/[0.08] mt-16 md:mt-20 pt-10">
+          <motion.div
+            variants={categoryContainerVariants}
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true, margin: "-100px" }}
+            className="flex flex-wrap items-center justify-center gap-x-3 gap-y-2 text-sm text-gray-500"
+          >
+            {categories.map((cat, i) => (
+              <motion.span key={cat.label} variants={categoryItemVariants} className="flex items-center gap-3">
+                <span>
+                  {cat.emoji} {cat.label}
+                </span>
+                {i < categories.length - 1 && <span className="text-gray-700">·</span>}
+              </motion.span>
+            ))}
+          </motion.div>
         </div>
-      </div>
+      </motion.div>
     </section>
   )
 }
