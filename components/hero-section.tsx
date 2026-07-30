@@ -27,6 +27,7 @@ function FloatingStatCard({
   suffix = "",
   label,
   position,
+  rotateClass = "",
   entered,
   delay,
   fromX,
@@ -38,6 +39,7 @@ function FloatingStatCard({
   suffix?: string
   label: string
   position: string
+  rotateClass?: string
   entered: boolean
   delay: number
   fromX: number
@@ -55,8 +57,8 @@ function FloatingStatCard({
     <motion.div
       initial={{ opacity: 0, x: fromX, y: fromY, scale: 0.9 }}
       animate={entered ? { opacity: 1, x: 0, y: 0, scale: 1 } : {}}
-      transition={{ type: "spring", stiffness: 200, damping: 15, delay }}
-      className={`absolute z-20 hidden lg:flex items-center gap-3 bg-[#0d1117] border border-blue-500/30 rounded-2xl px-4 py-3 shadow-[0_0_30px_-5px_rgba(59,130,246,0.45)] ${position}`}
+      transition={{ type: "spring", stiffness: 220, damping: 14, delay }}
+      className={`absolute z-20 hidden lg:block p-px rounded-2xl bg-gradient-to-br from-white/20 via-blue-400/10 to-transparent shadow-2xl shadow-black/40 ${position} ${rotateClass}`}
     >
       <motion.div
         aria-hidden
@@ -65,14 +67,16 @@ function FloatingStatCard({
         transition={{ duration: 0.5, delay: delay + 0.1 }}
         className="absolute inset-0 rounded-2xl border-2 border-blue-400 pointer-events-none"
       />
-      <div className="w-9 h-9 rounded-full bg-blue-500/10 flex items-center justify-center flex-shrink-0">
-        <Icon className="w-4.5 h-4.5 text-blue-400" />
-      </div>
-      <div>
-        <p className="text-white text-sm font-bold leading-tight">
-          {countUp ? <Counter to={to} decimals={decimals} duration={400} suffix={suffix} /> : `${(0).toFixed(decimals)}${suffix}`}
-        </p>
-        <p className="text-gray-500 text-xs leading-tight whitespace-nowrap">{label}</p>
+      <div className="flex items-center gap-3 bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl px-4 py-3 shadow-[0_0_30px_-5px_rgba(59,130,246,0.45)]">
+        <div className="w-9 h-9 rounded-full bg-blue-500/10 border border-blue-500/20 flex items-center justify-center flex-shrink-0">
+          <Icon className="w-4.5 h-4.5 text-blue-400" />
+        </div>
+        <div>
+          <p className="text-white text-2xl font-bold leading-tight">
+            {countUp ? <Counter to={to} decimals={decimals} duration={400} suffix={suffix} /> : `${(0).toFixed(decimals)}${suffix}`}
+          </p>
+          <p className="text-gray-400 text-xs leading-tight whitespace-nowrap">{label}</p>
+        </div>
       </div>
     </motion.div>
   )
@@ -113,18 +117,6 @@ export function HeroSection() {
         }
         .badge-shimmer {
           animation: badgeShimmer 1.1s ease-in-out 0.6s 1;
-        }
-        @keyframes dashboardGlowFadeIn {
-          from { opacity: 0; }
-          to { opacity: 0.4; }
-        }
-        @keyframes dashboardGlowBreathe {
-          0%, 100% { opacity: 0.3; }
-          50% { opacity: 0.4; }
-        }
-        .dashboard-glow-in {
-          animation: dashboardGlowFadeIn 0.9s cubic-bezier(0.16,1,0.3,1) forwards,
-                     dashboardGlowBreathe 4s ease-in-out 0.9s infinite;
         }
       `}</style>
 
@@ -214,14 +206,6 @@ export function HeroSection() {
           viewport={{ once: true, amount: 0.4 }}
           onViewportEnter={() => setEntered(true)}
         >
-          {/* Ambient glow behind the dashboard, fades in with the materialization and then breathes */}
-          <div
-            aria-hidden
-            className={`absolute -inset-10 md:-inset-16 rounded-[3rem] bg-blue-500/25 blur-[70px] -z-10 pointer-events-none ${
-              entered ? "dashboard-glow-in" : "opacity-0"
-            }`}
-          />
-
           <DashboardMock entered={entered} />
 
           <FloatingStatCard
@@ -229,7 +213,8 @@ export function HeroSection() {
             to={15}
             suffix="+"
             label="Negocios activos"
-            position="top-[-1.5rem] left-4 lg:-top-8 lg:-left-10"
+            position="top-8 -left-32"
+            rotateClass="-rotate-2"
             entered={entered}
             delay={2.2}
             fromX={-50}
@@ -241,7 +226,8 @@ export function HeroSection() {
             decimals={1}
             suffix="★"
             label="Calificación promedio"
-            position="top-[-1.5rem] right-4 lg:-top-8 lg:-right-10"
+            position="top-4 -right-32"
+            rotateClass="rotate-1"
             entered={entered}
             delay={2.3}
             fromX={50}
@@ -252,7 +238,8 @@ export function HeroSection() {
             to={98}
             suffix="%"
             label="Reseñas respondidas"
-            position="bottom-[-1.5rem] right-4 lg:-bottom-10 lg:-right-10"
+            position="bottom-16 -right-28"
+            rotateClass="-rotate-1"
             entered={entered}
             delay={2.4}
             fromX={50}

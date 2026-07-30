@@ -1003,17 +1003,28 @@ export function DashboardMock({ entered = true }: { entered?: boolean }) {
   }, [chromeReady])
 
   return (
-    <motion.div
-      initial={{ opacity: 0, scale: 0.85, rotateX: 8, filter: "blur(8px)" }}
-      animate={
-        entered
-          ? { opacity: 1, scale: 1, rotateX: 0, filter: "blur(0px)" }
-          : { opacity: 0, scale: 0.85, rotateX: 8, filter: "blur(8px)" }
-      }
-      transition={{ duration: 0.9, ease: [0.16, 1, 0.3, 1] }}
-      style={{ transformPerspective: 1200 }}
-      className="relative w-full max-w-5xl mx-auto rounded-2xl overflow-hidden shadow-2xl shadow-blue-500/10 ring-1 ring-blue-500/15 border border-blue-500/20 bg-[#0a0e1a]"
-    >
+    <div className="relative w-full max-w-5xl mx-auto">
+      {/* Ambient background glow — radial, pulses gently behind the dashboard */}
+      <div
+        aria-hidden
+        className={`absolute -inset-16 md:-inset-24 rounded-[3rem] pointer-events-none -z-10 ${
+          entered ? "dashboard-ambient-glow-in" : "opacity-0"
+        }`}
+        style={{
+          background: "radial-gradient(ellipse 80% 60% at 50% 50%, rgba(59,130,246,0.12) 0%, transparent 70%)",
+        }}
+      />
+
+      <motion.div
+        initial={{ opacity: 0, scale: 0.94, rotateX: 8 }}
+        animate={entered ? { opacity: 1, scale: 1, rotateX: 0 } : { opacity: 0, scale: 0.94, rotateX: 8 }}
+        transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+        style={{
+          transformPerspective: 1200,
+          boxShadow: "0 0 0 1px rgba(59,130,246,0.2), 0 32px 64px rgba(0,0,0,0.6), 0 0 80px rgba(59,130,246,0.08)",
+        }}
+        className="relative w-full rounded-2xl overflow-hidden ring-1 ring-white/10 bg-[#0a0e1a]"
+      >
       <style>{`
         .resply-mock-scroll::-webkit-scrollbar { width: 6px; }
         .resply-mock-scroll::-webkit-scrollbar-track { background: transparent; }
@@ -1025,7 +1036,41 @@ export function DashboardMock({ entered = true }: { entered?: boolean }) {
           100% { transform: translateX(420%); opacity: 0; }
         }
         .dashboard-top-shine { animation: dashboardTopShine 6s ease-in-out infinite; }
+        @keyframes dashboardAmbientFadeIn {
+          from { opacity: 0; }
+          to { opacity: 0.8; }
+        }
+        @keyframes dashboardAmbientPulse {
+          0%, 100% { opacity: 0.8; }
+          50% { opacity: 1; }
+        }
+        .dashboard-ambient-glow-in {
+          animation: dashboardAmbientFadeIn 0.9s cubic-bezier(0.16,1,0.3,1) forwards,
+                     dashboardAmbientPulse 4s ease-in-out 0.9s infinite;
+        }
+        @keyframes dashboardActivePing {
+          0% { box-shadow: 0 0 0 0 rgba(59,130,246,0.5); }
+          70% { box-shadow: 0 0 0 8px rgba(59,130,246,0); }
+          100% { box-shadow: 0 0 0 0 rgba(59,130,246,0); }
+        }
+        .dashboard-active-ping { animation: dashboardActivePing 2s ease-in-out infinite; }
+        @keyframes sidebarTabShimmer {
+          0% { transform: translateX(-100%); }
+          100% { transform: translateX(100%); }
+        }
+        .sidebar-tab-shimmer {
+          transform: translateX(-100%);
+          background: linear-gradient(90deg, transparent, rgba(59,130,246,0.12), transparent);
+        }
+        .group:hover .sidebar-tab-shimmer { animation: sidebarTabShimmer 0.3s ease-in-out; }
       `}</style>
+
+      {/* Glass reflection sheen — subtle top-to-bottom light layer, like a screen reflection */}
+      <div
+        aria-hidden
+        className="absolute inset-0 pointer-events-none z-50"
+        style={{ background: "linear-gradient(180deg, rgba(255,255,255,0.03) 0%, transparent 30%)" }}
+      />
 
       {/* Scan line — phase 2, sweeps once as the dashboard materializes */}
       {scanning && (
@@ -1049,13 +1094,19 @@ export function DashboardMock({ entered = true }: { entered?: boolean }) {
       <AnimatePresence>
         {notifVisible && (
           <motion.div
-            initial={{ opacity: 0, y: -12 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -12 }}
-            transition={{ duration: 0.3 }}
-            className="absolute top-2 right-2 z-20 flex items-center gap-2 bg-[#0f1628] border border-red-500/40 shadow-lg shadow-red-500/10 text-xs text-gray-200 px-3 py-2 rounded-xl"
+            initial={{ opacity: 0, y: -20, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -20 }}
+            transition={{ duration: 0.3, ease: "easeOut" }}
+            className="absolute top-2 right-2 z-40 flex items-center gap-2 bg-gray-900/95 backdrop-blur-md border-l-4 border-red-500 shadow-2xl shadow-black/60 text-xs text-gray-200 px-3 py-2 rounded-xl"
           >
-            <span>🔔</span>
+            <motion.span
+              animate={{ rotate: [0, -15, 12, -8, 5, 0] }}
+              transition={{ duration: 0.5, ease: "easeInOut" }}
+              className="inline-block"
+            >
+              🔔
+            </motion.span>
             <span>
               Nueva reseña — <span className="font-medium text-white">Ana Rodríguez</span> ·{" "}
               <span className="text-red-400">★</span>
@@ -1070,16 +1121,32 @@ export function DashboardMock({ entered = true }: { entered?: boolean }) {
         transition={{ duration: 0.5, ease: "easeInOut" }}
       >
         {/* Browser bar */}
-        <div className="flex items-center gap-2 px-4 py-3 bg-[#0f1628] border-b border-white/[0.06]">
+        <div className="flex items-center gap-2 px-4 py-3.5 bg-[#0f1628] border-b border-white/[0.06]">
           <div className="flex gap-1.5">
-            <div className="w-3 h-3 rounded-full bg-[#ff5f57]" />
-            <div className="w-3 h-3 rounded-full bg-[#febc2e]" />
-            <div className="w-3 h-3 rounded-full bg-[#28c840]" />
+            <div className="w-3.5 h-3.5 rounded-full bg-[#ff5f57] transition-transform duration-200 hover:scale-[1.2]" />
+            <div className="w-3.5 h-3.5 rounded-full bg-[#febc2e] transition-transform duration-200 hover:scale-[1.2]" />
+            <div className="w-3.5 h-3.5 rounded-full bg-[#28c840] transition-transform duration-200 hover:scale-[1.2]" />
           </div>
           <div className="flex-1 mx-4">
-            <div className="bg-[#0a0e1a] rounded-md px-3 py-1 text-xs text-gray-500 text-center">
+            <div className="flex items-center justify-center gap-1.5 bg-white/[0.06] border border-white/[0.08] rounded-md px-3 py-1 text-xs text-gray-500">
+              <span className="text-[10px]">🔒</span>
               app.resply.io/dashboard
             </div>
+          </div>
+          <div className="flex items-center gap-2 text-gray-600 flex-shrink-0">
+            <svg viewBox="0 0 24 24" className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M15 18l-6-6 6-6" />
+            </svg>
+            <svg viewBox="0 0 24 24" className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M9 18l6-6-6-6" />
+            </svg>
+            <svg viewBox="0 0 24 24" className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2}>
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M4 4v5h5M20 20v-5h-5M4 9a8 8 0 0113-5.3M20 15a8 8 0 01-13 5.3"
+              />
+            </svg>
           </div>
         </div>
 
@@ -1100,12 +1167,8 @@ export function DashboardMock({ entered = true }: { entered?: boolean }) {
                 Google Business ✓ Conectado
               </div>
             </div>
-            <div className="flex items-center gap-1 bg-blue-500/10 text-blue-400 text-xs px-2 py-1 rounded-full">
-              <motion.div
-                className="w-1.5 h-1.5 rounded-full bg-blue-400"
-                animate={chromeReady ? { opacity: [1, 0.35, 1] } : { opacity: 1 }}
-                transition={{ duration: 2, repeat: chromeReady ? Infinity : 0, ease: "easeInOut" }}
-              />
+            <div className="flex items-center gap-1.5 bg-blue-500/10 text-blue-400 text-xs px-2 py-1 rounded-full">
+              <div className={`w-2.5 h-2.5 rounded-full bg-blue-400 ${chromeReady ? "dashboard-active-ping" : ""}`} />
               Activo
             </div>
           </motion.div>
@@ -1127,7 +1190,7 @@ export function DashboardMock({ entered = true }: { entered?: boolean }) {
             variants={cascadeContainer}
             initial="hidden"
             animate={populated ? "visible" : "hidden"}
-            className="w-56 border-r border-white/[0.06] bg-[#080c18] flex flex-col"
+            className="w-56 border-r border-white/[0.06] bg-[linear-gradient(180deg,#080c18_0%,#060a14_100%)] flex flex-col"
           >
             <div className="p-4 border-b border-white/[0.06]">
               <div className="flex items-center gap-2">
@@ -1146,12 +1209,13 @@ export function DashboardMock({ entered = true }: { entered?: boolean }) {
                     key={item.id}
                     variants={cascadeItem}
                     onClick={() => setTab(item.id)}
-                    className={`flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs cursor-pointer transition-colors border-l-2 ${
+                    className={`group relative overflow-hidden flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs cursor-pointer transition-colors border-l-2 ${
                       isActive
                         ? "bg-blue-500/10 border-l-blue-500 text-blue-400"
                         : "border-l-transparent text-gray-500 hover:bg-white/5 hover:text-gray-300"
                     }`}
                   >
+                    <span aria-hidden className="sidebar-tab-shimmer absolute inset-0 -z-10 pointer-events-none" />
                     <Icon className="w-4 h-4 flex-shrink-0" />
                     {item.label}
                   </motion.div>
@@ -1388,6 +1452,7 @@ export function DashboardMock({ entered = true }: { entered?: boolean }) {
           </div>
         </div>
       </motion.div>
-    </motion.div>
+      </motion.div>
+    </div>
   )
 }
