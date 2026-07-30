@@ -1,3 +1,42 @@
+"use client"
+
+import { motion, type Variants } from "framer-motion"
+
+const sectionVariants: Variants = {
+  hidden: { opacity: 0, y: 40 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease: "easeOut" } },
+}
+
+const containerVariants: Variants = {
+  hidden: {},
+  visible: { transition: { staggerChildren: 0.1 } },
+}
+
+const cardVariants: Variants = {
+  hidden: { opacity: 0, scale: 0.9 },
+  visible: { opacity: 1, scale: 1, transition: { duration: 0.5, ease: "easeOut" } },
+}
+
+const headerContainerVariants: Variants = {
+  hidden: {},
+  visible: { transition: { staggerChildren: 0.15 } },
+}
+
+const titleVariants: Variants = {
+  hidden: { opacity: 0, x: -40 },
+  visible: { opacity: 1, x: 0, transition: { duration: 0.6, ease: "easeOut" } },
+}
+
+const underlineVariants: Variants = {
+  hidden: { scaleX: 0 },
+  visible: { scaleX: 1, transition: { duration: 0.5, ease: "easeOut" } },
+}
+
+const subtitleVariants: Variants = {
+  hidden: { opacity: 0, y: 12 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: "easeOut" } },
+}
+
 export function ProblemSection() {
   const problems = [
     {
@@ -30,38 +69,67 @@ export function ProblemSection() {
   ]
 
   return (
-    <section className="py-12 md:py-20 px-4 sm:px-6 lg:px-8 bg-card">
+    <motion.section
+      initial="hidden"
+      whileInView="visible"
+      viewport={{ once: true, margin: "-100px" }}
+      variants={sectionVariants}
+      className="py-12 md:py-20 px-4 sm:px-6 lg:px-8 bg-[#0a0f1e]"
+    >
       <div className="max-w-5xl mx-auto">
         {/* Section header - more emotional */}
-        <div className="text-center max-w-2xl mx-auto mb-10 md:mb-14">
-          <h2 className="text-2xl sm:text-3xl md:text-4xl font-semibold tracking-tight text-foreground text-balance leading-tight">
+        <motion.div
+          variants={headerContainerVariants}
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true, margin: "-100px" }}
+          className="text-center max-w-2xl mx-auto mb-10 md:mb-14"
+        >
+          <motion.h2
+            variants={titleVariants}
+            className="text-2xl sm:text-3xl md:text-4xl font-semibold tracking-tight text-white text-balance leading-tight"
+          >
             Tu reputación online define si te eligen o no
-          </h2>
-          <p className="mt-3 sm:mt-4 text-base sm:text-lg text-muted-foreground text-balance">
+          </motion.h2>
+          <motion.span
+            variants={underlineVariants}
+            className="block h-[2px] w-16 bg-blue-500 rounded-full mx-auto mt-4 origin-left"
+          />
+          <motion.p
+            variants={subtitleVariants}
+            className="mt-3 sm:mt-4 text-base sm:text-lg text-gray-400 text-balance"
+          >
             Cada reseña sin respuesta afecta la confianza del cliente y la visibilidad de tu negocio.
-          </p>
-        </div>
+          </motion.p>
+        </motion.div>
 
         {/* Problems grid */}
-        <div className="grid sm:grid-cols-3 gap-4 md:gap-6">
+        <motion.div
+          variants={containerVariants}
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true, margin: "-100px" }}
+          className="grid sm:grid-cols-3 gap-4 md:gap-6"
+        >
           {problems.map((problem, index) => (
-            <div
+            <motion.div
               key={index}
-              className="p-5 sm:p-6 rounded-xl sm:rounded-2xl bg-background border border-border"
+              variants={cardVariants}
+              className="p-5 sm:p-6 rounded-xl sm:rounded-2xl bg-white/[0.02] border border-white/10"
             >
-              <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg sm:rounded-xl bg-secondary flex items-center justify-center text-foreground mb-3 sm:mb-4">
+              <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg sm:rounded-xl bg-blue-500/10 flex items-center justify-center text-blue-400 mb-3 sm:mb-4">
                 {problem.icon}
               </div>
-              <h3 className="text-base sm:text-lg font-medium text-foreground mb-2">
+              <h3 className="text-base sm:text-lg font-medium text-white mb-2">
                 {problem.title}
               </h3>
-              <p className="text-muted-foreground text-sm leading-relaxed">
+              <p className="text-gray-400 text-sm leading-relaxed">
                 {problem.description}
               </p>
-            </div>
+            </motion.div>
           ))}
-        </div>
+        </motion.div>
       </div>
-    </section>
+    </motion.section>
   )
 }

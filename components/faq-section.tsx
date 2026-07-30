@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { motion, type Variants } from "framer-motion"
 import { ChevronDown } from "lucide-react"
 
 const faqs = [
@@ -36,6 +37,36 @@ const faqs = [
   },
 ]
 
+const sectionVariants: Variants = {
+  hidden: { opacity: 0, y: 40 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease: "easeOut" } },
+}
+
+const containerVariants: Variants = {
+  hidden: {},
+  visible: { transition: { staggerChildren: 0.1 } },
+}
+
+const itemVariants: Variants = {
+  hidden: { opacity: 0, y: 24 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: "easeOut" } },
+}
+
+const headerContainerVariants: Variants = {
+  hidden: {},
+  visible: { transition: { staggerChildren: 0.15 } },
+}
+
+const titleVariants: Variants = {
+  hidden: { opacity: 0, x: -40 },
+  visible: { opacity: 1, x: 0, transition: { duration: 0.6, ease: "easeOut" } },
+}
+
+const underlineVariants: Variants = {
+  hidden: { scaleX: 0 },
+  visible: { scaleX: 1, transition: { duration: 0.5, ease: "easeOut" } },
+}
+
 export function FaqSection() {
   const [openIndex, setOpenIndex] = useState<number | null>(null)
 
@@ -44,37 +75,62 @@ export function FaqSection() {
   }
 
   return (
-    <section className="py-20 px-4 bg-white">
+    <motion.section
+      initial="hidden"
+      whileInView="visible"
+      viewport={{ once: true, margin: "-100px" }}
+      variants={sectionVariants}
+      className="py-20 px-4 bg-[#0a0f1e]"
+    >
       <div className="max-w-3xl mx-auto">
-        <h2 className="text-3xl font-bold text-slate-900 mb-12 text-center">
-          Preguntas frecuentes
-        </h2>
-        <div className="rounded-2xl border border-slate-200 overflow-hidden">
+        <motion.div
+          variants={headerContainerVariants}
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true, margin: "-100px" }}
+          className="mb-12 text-center"
+        >
+          <motion.h2 variants={titleVariants} className="text-3xl font-bold text-white">
+            Preguntas frecuentes
+          </motion.h2>
+          <motion.span
+            variants={underlineVariants}
+            className="block h-[2px] w-16 bg-blue-500 rounded-full mx-auto mt-4 origin-left"
+          />
+        </motion.div>
+        <motion.div
+          variants={containerVariants}
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true, margin: "-100px" }}
+          className="rounded-2xl border border-white/10 overflow-hidden bg-white/[0.02]"
+        >
           {faqs.map((faq, index) => (
-            <div
+            <motion.div
               key={index}
-              className={`border-b border-slate-200 last:border-b-0`}
+              variants={itemVariants}
+              className="border-b border-white/10 last:border-b-0"
             >
               <button
                 onClick={() => toggle(index)}
-                className="w-full flex items-center justify-between px-6 py-5 text-left hover:bg-slate-50 transition-colors"
+                className="w-full flex items-center justify-between px-6 py-5 text-left hover:bg-white/5 transition-colors"
               >
-                <span className="text-slate-800 font-medium">{faq.question}</span>
+                <span className="text-gray-200 font-medium">{faq.question}</span>
                 <ChevronDown
-                  className={`h-5 w-5 text-slate-400 transition-transform duration-200 flex-shrink-0 ml-4 ${
+                  className={`h-5 w-5 text-gray-500 transition-transform duration-200 flex-shrink-0 ml-4 ${
                     openIndex === index ? "rotate-180" : ""
                   }`}
                 />
               </button>
               {openIndex === index && (
-                <div className="px-6 pb-5 text-slate-600 text-sm leading-relaxed">
+                <div className="px-6 pb-5 text-gray-400 text-sm leading-relaxed">
                   {faq.answer}
                 </div>
               )}
-            </div>
+            </motion.div>
           ))}
-        </div>
+        </motion.div>
       </div>
-    </section>
+    </motion.section>
   )
 }
