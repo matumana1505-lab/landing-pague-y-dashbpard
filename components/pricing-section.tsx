@@ -147,7 +147,7 @@ export function PricingSection() {
               <PrimaryCTAButton
                 size="lg"
                 showIcon
-                onClick={() => signIn("google", { callbackUrl: "/dashboard" })}
+                onClick={() => signIn("google", { callbackUrl: "/?welcome=true" })}
                 wrapperClassName="w-full sm:w-auto"
                 className="w-full sm:w-auto"
               >

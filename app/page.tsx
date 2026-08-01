@@ -1,3 +1,4 @@
+import { Suspense } from "react"
 import { Navbar } from "@/components/navbar"
 import { HeroSection } from "@/components/hero-section"
 import { ProblemSection } from "@/components/problem-section"
@@ -9,6 +10,7 @@ import { UpcomingSection } from "@/components/upcoming-section"
 import { PricingSection } from "@/components/pricing-section"
 import { FaqSection } from "@/components/faq-section"
 import { Footer } from "@/components/footer"
+import { TrialWelcomeModal } from "@/components/trial-welcome-modal"
 
 export default function Home() {
   return (
@@ -24,6 +26,9 @@ export default function Home() {
       <UpcomingSection />
       <FaqSection />
       <Footer />
+      <Suspense fallback={null}>
+        <TrialWelcomeModal />
+      </Suspense>
     </main>
   )
 }

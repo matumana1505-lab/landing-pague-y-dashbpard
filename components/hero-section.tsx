@@ -175,7 +175,7 @@ export function HeroSection() {
           transition={{ duration: 0.5, delay: 1.0 }}
           className="flex items-center justify-center gap-4 flex-wrap"
         >
-          <GoogleAuthButton size="lg" onClick={() => signIn("google", { callbackUrl: "/dashboard" })}>
+          <GoogleAuthButton size="lg" onClick={() => signIn("google", { callbackUrl: "/?welcome=true" })}>
             Iniciar sesión con Google
           </GoogleAuthButton>
 
@@ -190,7 +190,7 @@ export function HeroSection() {
         >
           <NavPill href="#ejemplos">Ver ejemplos</NavPill>
           <NavPill href="#precio">Ver precios</NavPill>
-          <NavPill onClick={() => signIn("google", { callbackUrl: "/dashboard" })}>Empezar gratis</NavPill>
+          <NavPill onClick={() => signIn("google", { callbackUrl: "/?welcome=true" })}>Empezar gratis</NavPill>
         </motion.div>
       </div>
 

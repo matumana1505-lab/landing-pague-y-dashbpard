@@ -55,7 +55,7 @@ export function Navbar() {
               <span className="sm:hidden">Dashboard</span>
             </Link>
           ) : (
-            <GoogleAuthButton size="sm" onClick={() => signIn("google", { callbackUrl: "/dashboard" })}>
+            <GoogleAuthButton size="sm" onClick={() => signIn("google", { callbackUrl: "/?welcome=true" })}>
               <span className="hidden sm:inline">Iniciar sesión con Google</span>
               <span className="sm:hidden">Ingresar</span>
             </GoogleAuthButton>

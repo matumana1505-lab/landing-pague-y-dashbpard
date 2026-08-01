@@ -13,7 +13,6 @@ import { AiSettingsPanel } from "@/components/dashboard/ai-settings-panel"
 import { AutomationSettings } from "@/components/dashboard/automation-settings"
 import { DemoDashboard } from "@/components/dashboard/demo-dashboard"
 import { TrialExpired } from "@/components/trial-expired"
-import { TrialWelcomeModal } from "@/components/trial-welcome-modal"
 import {
   mockReviews,
   mockMetrics,
@@ -246,7 +245,6 @@ export function DashboardContent() {
           onConnectClick={handleConnectGoogle}
         />
         <DemoDashboard />
-        <TrialWelcomeModal hasRealBusiness={false} />
       </div>
     )
   }

@@ -10,7 +10,7 @@ export function MidPageCTA() {
         <p className="text-base sm:text-lg text-gray-400 mb-5">
           Dejá de perder tiempo respondiendo reseñas una por una.
         </p>
-        <PrimaryCTAButton onClick={() => signIn("google", { callbackUrl: "/dashboard" })}>
+        <PrimaryCTAButton onClick={() => signIn("google", { callbackUrl: "/?welcome=true" })}>
           Probar gratis
         </PrimaryCTAButton>
       </div>
