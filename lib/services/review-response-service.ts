@@ -5,6 +5,8 @@ export interface ReviewResponsePersistenceInput {
   businessId: string
   reviewId: string
   googleReviewId?: string | null
+  reviewerName?: string | null
+  reviewerPhotoUrl?: string | null
   reviewText: string
   generatedText: string
   publishedText?: string | null
@@ -33,6 +35,8 @@ export async function upsertReviewResponse(input: ReviewResponsePersistenceInput
       where: { id: existing.id },
       data: {
         googleReviewId: input.googleReviewId ?? existing.googleReviewId,
+        reviewerName: input.reviewerName ?? existing.reviewerName,
+        reviewerPhotoUrl: input.reviewerPhotoUrl ?? existing.reviewerPhotoUrl,
         reviewText: input.reviewText,
         generatedText: input.generatedText,
         publishedText: input.publishedText ?? existing.publishedText,
@@ -53,6 +57,8 @@ export async function upsertReviewResponse(input: ReviewResponsePersistenceInput
       businessId: input.businessId,
       reviewId: input.reviewId,
       googleReviewId: input.googleReviewId ?? null,
+      reviewerName: input.reviewerName ?? null,
+      reviewerPhotoUrl: input.reviewerPhotoUrl ?? null,
       reviewText: input.reviewText,
       generatedText: input.generatedText,
       publishedText: input.publishedText ?? null,

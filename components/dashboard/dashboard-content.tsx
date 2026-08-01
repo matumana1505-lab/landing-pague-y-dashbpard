@@ -2,117 +2,118 @@
 
 import { signIn } from "next-auth/react"
 import { useEffect, useMemo, useState } from "react"
+import { Loader2 } from "lucide-react"
 import { useDashboard } from "@/components/dashboard/dashboard-shell"
 import { DashboardHeader } from "@/components/dashboard/dashboard-header"
-import { MetricsSummary } from "@/components/dashboard/metrics-summary"
-import { RequiresAttentionSection } from "@/components/dashboard/requires-attention-section"
-import { ReviewsList } from "@/components/dashboard/reviews-list"
-import { ReviewResponseDialog } from "@/components/dashboard/review-response-dialog"
+import { ReviewInbox } from "@/components/dashboard/review-inbox"
+import { StatsTab } from "@/components/dashboard/stats-tab"
+import { AiConfigTab } from "@/components/dashboard/ai-config-tab"
+import { ComplaintsTab } from "@/components/dashboard/complaints-tab"
+import { AlertsTab } from "@/components/dashboard/alerts-tab"
 import { OnboardingFlow } from "@/components/dashboard/onboarding/onboarding-flow"
-import { AiSettingsPanel } from "@/components/dashboard/ai-settings-panel"
-import { AutomationSettings } from "@/components/dashboard/automation-settings"
-import { DemoDashboard } from "@/components/dashboard/demo-dashboard"
 import { TrialExpired } from "@/components/trial-expired"
+import { demoReviews } from "@/components/dashboard/demo-data"
+import { mockOnboardingState } from "@/lib/mock-data"
 import {
-  mockReviews,
-  mockMetrics,
-  mockOnboardingState,
-} from "@/lib/mock-data"
-import {
-  aiConfigToUserSettings,
   completeOnboarding,
   fetchReviewResponses,
   persistedBusinessToProfile,
   userSettingsToAiConfig,
 } from "@/lib/api-client"
-import { Review, UserSettings, OnboardingState, BusinessProfile, PersistedBusiness } from "@/lib/types"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Card } from "@/components/ui/card"
-import { useBusinessAiConfig } from "@/hooks/use-business-ai-config"
-import { Loader2 } from "lucide-react"
+import {
+  BusinessProfile,
+  DashboardReview,
+  OnboardingState,
+  PersistedBusiness,
+  ReviewResponseRecord,
+  UserSettings,
+} from "@/lib/types"
+
+function mapReviewResponseToDashboardReview(record: ReviewResponseRecord): DashboardReview {
+  return {
+    id: record.reviewId,
+    reviewerName: record.reviewerName ?? "Cliente de Google",
+    reviewerPhotoUrl: record.reviewerPhotoUrl,
+    rating: record.rating ?? 0,
+    reviewText: record.reviewText,
+    generatedText: record.generatedText || null,
+    publishedText: record.publishedText,
+    status: record.status,
+    createdAt: record.createdAt,
+  }
+}
 
 export function DashboardContent() {
-  const { sessionStatus, businesses: ctxBusinesses, activeBusinessId: ctxActiveBusinessId, setActiveBusinessId: setCtxActiveBusinessId, userProfile, loading: ctxLoading, reload: ctxReload, error: ctxError } = useDashboard()
-  const [reviews, setReviews] = useState<Review[]>(mockReviews)
-  const [onboardingState, setOnboardingState] = useState<OnboardingState>(mockOnboardingState)
-  const [selectedReview, setSelectedReview] = useState<Review | null>(null)
-  const [showResponseDialog, setShowResponseDialog] = useState(false)
-  
-  const [bootstrapError, setBootstrapError] = useState<string | null>(null)
-  const businesses = ctxBusinesses as PersistedBusiness[]
-  const activeBusinessId = ctxActiveBusinessId
+  const {
+    sessionStatus,
+    businesses: ctxBusinesses,
+    activeBusinessId,
+    setActiveBusinessId: setCtxActiveBusinessId,
+    userProfile,
+    loading: ctxLoading,
+    reload: ctxReload,
+    error: ctxError,
+    activeTab,
+  } = useDashboard()
 
+  const [onboardingState, setOnboardingState] = useState<OnboardingState>(mockOnboardingState)
+  const [bootstrapError, setBootstrapError] = useState<string | null>(null)
+  const [reviews, setReviews] = useState<DashboardReview[]>(demoReviews)
+  const [reviewsLoading, setReviewsLoading] = useState(false)
+
+  const businesses = ctxBusinesses as PersistedBusiness[]
   const hasRealBusiness = businesses.some((business) => !business.isDemo)
   const isTrialExpired =
     hasRealBusiness &&
     Boolean(userProfile?.trialEndsAt) &&
     new Date(userProfile.trialEndsAt).getTime() < Date.now()
 
-  const {
-    config: aiConfig,
-    isLoading: isConfigLoading,
-    isSaving: isConfigSaving,
-    isDefault: isConfigDefault,
-    updateConfig,
-  } = useBusinessAiConfig({
-    businessId: activeBusinessId,
-    autoSave: true,
-  })
-
-  const userSettings: UserSettings = aiConfigToUserSettings(aiConfig)
   const businessProfile = useMemo(() => {
     const activeBusiness = businesses.find((business) => business.id === activeBusinessId)
     return activeBusiness ? persistedBusinessToProfile(activeBusiness) : null
   }, [businesses, activeBusinessId])
 
   useEffect(() => {
-    if (userProfile) {
-      if (userProfile.onboardingCompleted) {
-        setOnboardingState({
-          currentStep: "completed",
-          googleConnected: true,
-          responseToneSelected: true,
-          automationConfigured: true,
-        })
-      }
+    if (userProfile?.onboardingCompleted) {
+      setOnboardingState({
+        currentStep: "completed",
+        googleConnected: true,
+        responseToneSelected: true,
+        automationConfigured: true,
+      })
     }
   }, [userProfile])
 
   useEffect(() => {
-    const loadPersistedResponses = async () => {
-      if (!activeBusinessId) return
-
-      try {
-        const data = await fetchReviewResponses(activeBusinessId)
-        setReviews((prev) =>
-          prev.map((review) => {
-            const persisted = data.responses.find((item) => item.reviewId === review.id)
-            if (!persisted) return review
-
-            return {
-              ...review,
-              hasResponse: Boolean(persisted.publishedText || persisted.generatedText),
-              response: persisted.publishedText ?? persisted.generatedText,
-              responseDate: persisted.publishedAt ? new Date(persisted.publishedAt) : undefined,
-            }
-          })
-        )
-      } catch {
-        // Se mantiene el estado actual si no hay respuestas persistidas.
-      }
+    if (!hasRealBusiness || !activeBusinessId) {
+      setReviews(demoReviews)
+      return
     }
 
-    void loadPersistedResponses()
-  }, [activeBusinessId])
+    let cancelled = false
+    setReviewsLoading(true)
+    fetchReviewResponses(activeBusinessId)
+      .then((data) => {
+        if (cancelled) return
+        setReviews(data.responses.map(mapReviewResponseToDashboardReview))
+      })
+      .catch(() => {
+        if (!cancelled) setReviews([])
+      })
+      .finally(() => {
+        if (!cancelled) setReviewsLoading(false)
+      })
+
+    return () => {
+      cancelled = true
+    }
+  }, [hasRealBusiness, activeBusinessId])
 
   const handleConnectGoogle = async () => {
     await signIn("google", {
       callbackUrl: "/dashboard",
       prompt: "select_account",
     })
-  }
-
-  const handleBusinessSelected = () => {
   }
 
   const handleBusinessChange = (businessId: string) => {
@@ -122,42 +123,11 @@ export function DashboardContent() {
     void setCtxActiveBusinessId(businessId)
   }
 
-  const handleViewResponse = (reviewId: string) => {
-    const review = reviews.find((r) => r.id === reviewId)
-    if (review) {
-      setSelectedReview(review)
-      setShowResponseDialog(true)
-    }
-  }
+  const handleBusinessSelected = () => {}
 
-  const handleApproveResponse = (reviewId: string, response: string) => {
+  const handleResponseGenerated = (reviewId: string, generatedText: string) => {
     setReviews((prev) =>
-      prev.map((r) =>
-        r.id === reviewId
-          ? {
-              ...r,
-              hasResponse: true,
-              response,
-              responseDate: new Date(),
-            }
-          : r
-      )
-    )
-    setShowResponseDialog(false)
-  }
-
-  const handleGenerateResponse = (reviewId: string, response: string) => {
-    setReviews((prev) =>
-      prev.map((review) =>
-        review.id === reviewId
-          ? {
-              ...review,
-              response,
-              hasResponse: false,
-              responseDate: undefined,
-            }
-          : review
-      )
+      prev.map((review) => (review.id === reviewId ? { ...review, generatedText, status: "GENERATED" } : review))
     )
   }
 
@@ -190,7 +160,6 @@ export function DashboardContent() {
         automationConfigured: true,
       })
 
-      // Update central dashboard state: set active business and reload lists
       await setCtxActiveBusinessId(data.business.id)
       await ctxReload()
     } catch (err) {
@@ -200,51 +169,28 @@ export function DashboardContent() {
     }
   }
 
-  const handleAutomationUpdate = (settings: UserSettings) => {
-    updateConfig(userSettingsToAiConfig(settings))
-  }
-
   if (sessionStatus === "loading" || ctxLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center gap-3">
-        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-        <span className="text-muted-foreground">Cargando dashboard...</span>
+      <div className="flex min-h-screen items-center justify-center gap-3 text-gray-500">
+        <Loader2 className="h-6 w-6 animate-spin" />
+        <span>Cargando dashboard...</span>
       </div>
     )
   }
 
   if ((bootstrapError || ctxError) && onboardingState.currentStep === "completed") {
     return (
-      <div className="min-h-screen flex items-center justify-center p-6">
-        <Card className="p-8 max-w-md text-center space-y-4">
-          <p className="text-destructive">{bootstrapError ?? ctxError}</p>
+      <div className="flex min-h-screen items-center justify-center p-6">
+        <div className="max-w-md space-y-4 rounded-xl border border-white/[0.06] bg-[#0f1628] p-8 text-center">
+          <p className="text-red-400">{bootstrapError ?? ctxError}</p>
           <button
             type="button"
             onClick={() => void ctxReload()}
-            className="text-sm text-primary hover:underline"
+            className="text-sm text-blue-400 hover:underline"
           >
             Reintentar
           </button>
-        </Card>
-      </div>
-    )
-  }
-
-  if (sessionStatus === "authenticated" && !hasRealBusiness) {
-    return (
-      <div className="min-h-screen bg-background">
-        <DashboardHeader
-          businessProfile={{
-            id: "",
-            name: "Tu Negocio (Demo)",
-            isConnected: false,
-          }}
-          businesses={businesses}
-          activeBusinessId={activeBusinessId}
-          onBusinessChange={handleBusinessChange}
-          onConnectClick={handleConnectGoogle}
-        />
-        <DemoDashboard />
+        </div>
       </div>
     )
   }
@@ -270,106 +216,59 @@ export function DashboardContent() {
     )
   }
 
+  const headerProfile = businessProfile ?? {
+    id: "",
+    name: hasRealBusiness ? "Sin negocio seleccionado" : "Tu Negocio (Demo)",
+    isConnected: hasRealBusiness,
+  }
+
   return (
-    <div className="min-h-screen bg-background">
+    <div className="flex min-h-screen flex-col">
       <DashboardHeader
-        businessProfile={
-          businessProfile ?? {
-            id: "",
-            name: "Sin negocio seleccionado",
-            isConnected: false,
-          }
-        }
+        businessProfile={headerProfile}
         businesses={businesses}
         activeBusinessId={activeBusinessId}
+        isDemo={!hasRealBusiness}
         onBusinessChange={handleBusinessChange}
         onConnectClick={handleConnectGoogle}
       />
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="space-y-8">
-          <MetricsSummary metrics={mockMetrics} />
-
-          <RequiresAttentionSection
-            reviews={reviews}
-            tone={userSettings.tone}
-            businessId={activeBusinessId}
-            businessName={businessProfile?.name ?? "Tu negocio"}
-            additionalInstructions={aiConfig.additionalInstructions}
-            onApproveResponse={handleApproveResponse}
-            onGenerateResponse={handleGenerateResponse}
-          />
-
-          <Tabs defaultValue="reviews" className="w-full">
-            <TabsList className="grid w-full grid-cols-3">
-              <TabsTrigger value="reviews">Últimas reseñas</TabsTrigger>
-              <TabsTrigger value="respondidas">Reseñas respondidas</TabsTrigger>
-              <TabsTrigger value="settings">Configuración IA</TabsTrigger>
-            </TabsList>
-
-            <TabsContent value="reviews" className="space-y-4">
-              <div>
-                <h2 className="text-xl font-semibold text-foreground mb-4">
-                  Todas las reseñas ({reviews.length} total)
-                </h2>
-                <ReviewsList reviews={reviews} onViewResponse={handleViewResponse} />
-              </div>
-            </TabsContent>
-
-            <TabsContent value="respondidas" className="space-y-4">
-              <div>
-                <h2 className="text-xl font-semibold text-foreground mb-4">
-                  Reseñas respondidas ({reviews.filter((r) => r.hasResponse).length})
-                </h2>
-                <div className="grid gap-4">
-                  {reviews.filter((r) => r.hasResponse).length === 0 ? (
-                    <Card className="p-12 text-center">
-                      <p className="text-muted-foreground">Aún no hay reseñas respondidas.</p>
-                    </Card>
-                  ) : (
-                    <ReviewsList
-                      reviews={reviews.filter((r) => r.hasResponse)}
-                      onViewResponse={handleViewResponse}
-                    />
-                  )}
-                </div>
-              </div>
-            </TabsContent>
-
-            <TabsContent value="settings" className="space-y-6">
-              {activeBusinessId && businessProfile ? (
-                <>
-                  <AiSettingsPanel
-                    config={aiConfig}
-                    businessName={businessProfile.name}
-                    isLoading={isConfigLoading}
-                    isSaving={isConfigSaving}
-                    isDefault={isConfigDefault}
-                    onConfigChange={updateConfig}
-                  />
-                  <AutomationSettings
-                    key={activeBusinessId}
-                    settings={userSettings}
-                    onUpdateSettings={handleAutomationUpdate}
-                  />
-                </>
-              ) : (
-                <Card className="p-12 text-center">
-                  <p className="text-muted-foreground">
-                    Selecciona un negocio para configurar sus respuestas automáticas.
-                  </p>
-                </Card>
-              )}
-            </TabsContent>
-          </Tabs>
+      {!hasRealBusiness && (
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-blue-500/20 bg-gradient-to-r from-blue-950 via-blue-900/60 to-blue-950 px-6 py-3">
+          <p className="text-sm text-blue-200">
+            Estás viendo datos de ejemplo · Conectá tu Google Business para empezar tu trial de 14 días gratis
+          </p>
+          <button
+            type="button"
+            onClick={handleConnectGoogle}
+            className="whitespace-nowrap rounded-lg bg-blue-600 px-4 py-1.5 text-sm font-medium text-white transition-colors hover:bg-blue-500"
+          >
+            Conectar mi negocio →
+          </button>
         </div>
-      </main>
+      )}
 
-      <ReviewResponseDialog
-        review={selectedReview}
-        open={showResponseDialog}
-        onOpenChange={setShowResponseDialog}
-      />
+      <div className="flex flex-1 flex-col overflow-hidden">
+        {activeTab === "inbox" &&
+          (reviewsLoading ? (
+            <div className="flex flex-1 items-center justify-center text-gray-500">
+              <Loader2 className="h-5 w-5 animate-spin" />
+            </div>
+          ) : (
+            <ReviewInbox
+              reviews={reviews}
+              isDemo={!hasRealBusiness}
+              businessId={activeBusinessId}
+              onResponseGenerated={handleResponseGenerated}
+            />
+          ))}
+        {activeTab === "stats" && <StatsTab reviews={reviews} />}
+        {activeTab === "ai-config" && (
+          <AiConfigTab businessId={activeBusinessId} businessName={businessProfile?.name ?? "tu negocio"} />
+        )}
+        {activeTab === "complaints" && <ComplaintsTab />}
+        {activeTab === "alerts" && <AlertsTab reviews={reviews} />}
+      </div>
     </div>
   )
 }

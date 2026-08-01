@@ -29,6 +29,8 @@ export async function GET(request: Request) {
       businessId: response.businessId,
       reviewId: response.reviewId,
       googleReviewId: response.googleReviewId,
+      reviewerName: response.reviewerName,
+      reviewerPhotoUrl: response.reviewerPhotoUrl,
       reviewText: response.reviewText,
       generatedText: response.generatedText,
       publishedText: response.publishedText,

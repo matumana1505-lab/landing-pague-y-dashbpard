@@ -67,6 +67,8 @@ async function processReviewsForBusiness(
         businessId: business.id,
         reviewId: review.googleReviewId,
         googleReviewId: review.googleReviewId,
+        reviewerName: review.reviewerName,
+        reviewerPhotoUrl: review.reviewerPhotoUrl ?? null,
         reviewText: review.text,
         generatedText,
         rating: review.rating,

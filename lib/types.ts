@@ -27,6 +27,8 @@ export interface ReviewResponseRecord {
   businessId: string;
   reviewId: string;
   googleReviewId: string | null;
+  reviewerName: string | null;
+  reviewerPhotoUrl: string | null;
   reviewText: string;
   generatedText: string;
   publishedText: string | null;
@@ -160,6 +162,19 @@ export interface UserProfileResponse {
     trialStartedAt: string | null;
     trialEndsAt: string | null;
   };
+}
+
+/** Shape shared by demo data and real (mapped) reviews for the dashboard's review inbox. */
+export interface DashboardReview {
+  id: string;
+  reviewerName: string;
+  reviewerPhotoUrl: string | null;
+  rating: number;
+  reviewText: string;
+  generatedText: string | null;
+  publishedText: string | null;
+  status: ReviewResponseStatus;
+  createdAt: string;
 }
 
 export type OnboardingStep = "connect" | "customize" | "automation" | "completed";

@@ -66,6 +66,8 @@ model ReviewResponse {
   business         Business              @relation(fields: [businessId], references: [id], onDelete: Cascade)
   reviewId         String
   googleReviewId   String?
+  reviewerName     String?
+  reviewerPhotoUrl String?
   reviewText       String
   generatedText    String
   publishedText    String?

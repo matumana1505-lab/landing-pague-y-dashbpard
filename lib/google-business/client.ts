@@ -1,6 +1,7 @@
 export interface GoogleReview {
   googleReviewId: string
   reviewerName: string
+  reviewerPhotoUrl?: string
   rating: number
   text: string
   createdAt: Date
