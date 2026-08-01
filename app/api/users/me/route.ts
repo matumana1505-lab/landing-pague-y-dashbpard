@@ -72,7 +72,7 @@ export async function POST(request: Request) {
 
   const business = await upsertUserBusiness(session.user.id, parsed.data.business)
   const config = await upsertBusinessAiConfig(business.id, parsed.data.aiConfig)
-  await completeUserOnboarding(session.user.id, business.id)
+  await completeUserOnboarding(session.user.id, business.id, !business.isDemo)
 
   const profile = await getUserProfile(session.user.id)
 

@@ -35,6 +35,8 @@ model User {
   createdAt             DateTime   @default(now())
   updatedAt             DateTime   @updatedAt
   businesses            Business[] @relation("UserBusinesses")
+  trialStartedAt        DateTime?
+  trialEndsAt           DateTime?
 }
 
 /// Negocio vinculado a Google Business Profile (uno por ubicación).

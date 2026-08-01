@@ -7,7 +7,11 @@ export type UserProfileDto = {
   name: string | null
   onboardingCompleted: boolean
   activeBusinessId: string | null
+  trialStartedAt: string | null
+  trialEndsAt: string | null
 }
+
+const TRIAL_DURATION_MS = 14 * 24 * 60 * 60 * 1000
 
 export async function getUserProfile(userId: string): Promise<UserProfileDto | null> {
   const user = await prisma.user.findUnique({
@@ -18,6 +22,8 @@ export async function getUserProfile(userId: string): Promise<UserProfileDto | n
       name: true,
       onboardingCompletedAt: true,
       activeBusinessId: true,
+      trialStartedAt: true,
+      trialEndsAt: true,
     },
   })
 
@@ -29,18 +35,39 @@ export async function getUserProfile(userId: string): Promise<UserProfileDto | n
     name: user.name,
     onboardingCompleted: user.onboardingCompletedAt !== null,
     activeBusinessId: user.activeBusinessId,
+    trialStartedAt: user.trialStartedAt ? user.trialStartedAt.toISOString() : null,
+    trialEndsAt: user.trialEndsAt ? user.trialEndsAt.toISOString() : null,
   }
 }
 
 export async function completeUserOnboarding(
   userId: string,
-  activeBusinessId: string
+  activeBusinessId: string,
+  isRealBusiness: boolean = true
 ): Promise<User> {
+  let trialData: { trialStartedAt: Date; trialEndsAt: Date } | Record<string, never> = {}
+
+  if (isRealBusiness) {
+    const existing = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { trialStartedAt: true },
+    })
+
+    if (!existing?.trialStartedAt) {
+      const trialStartedAt = new Date()
+      trialData = {
+        trialStartedAt,
+        trialEndsAt: new Date(trialStartedAt.getTime() + TRIAL_DURATION_MS),
+      }
+    }
+  }
+
   return prisma.user.update({
     where: { id: userId },
     data: {
       onboardingCompletedAt: new Date(),
       activeBusinessId,
+      ...trialData,
     },
   })
 }

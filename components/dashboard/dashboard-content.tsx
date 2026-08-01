@@ -11,6 +11,9 @@ import { ReviewResponseDialog } from "@/components/dashboard/review-response-dia
 import { OnboardingFlow } from "@/components/dashboard/onboarding/onboarding-flow"
 import { AiSettingsPanel } from "@/components/dashboard/ai-settings-panel"
 import { AutomationSettings } from "@/components/dashboard/automation-settings"
+import { DemoDashboard } from "@/components/dashboard/demo-dashboard"
+import { TrialExpired } from "@/components/trial-expired"
+import { TrialWelcomeModal } from "@/components/trial-welcome-modal"
 import {
   mockReviews,
   mockMetrics,
@@ -39,6 +42,12 @@ export function DashboardContent() {
   const [bootstrapError, setBootstrapError] = useState<string | null>(null)
   const businesses = ctxBusinesses as PersistedBusiness[]
   const activeBusinessId = ctxActiveBusinessId
+
+  const hasRealBusiness = businesses.some((business) => !business.isDemo)
+  const isTrialExpired =
+    hasRealBusiness &&
+    Boolean(userProfile?.trialEndsAt) &&
+    new Date(userProfile.trialEndsAt).getTime() < Date.now()
 
   const {
     config: aiConfig,
@@ -220,6 +229,30 @@ export function DashboardContent() {
         </Card>
       </div>
     )
+  }
+
+  if (sessionStatus === "authenticated" && !hasRealBusiness) {
+    return (
+      <div className="min-h-screen bg-background">
+        <DashboardHeader
+          businessProfile={{
+            id: "",
+            name: "Tu Negocio (Demo)",
+            isConnected: false,
+          }}
+          businesses={businesses}
+          activeBusinessId={activeBusinessId}
+          onBusinessChange={handleBusinessChange}
+          onConnectClick={handleConnectGoogle}
+        />
+        <DemoDashboard />
+        <TrialWelcomeModal hasRealBusiness={false} />
+      </div>
+    )
+  }
+
+  if (isTrialExpired) {
+    return <TrialExpired />
   }
 
   if (onboardingState.currentStep !== "completed") {

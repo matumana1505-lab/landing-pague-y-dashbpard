@@ -157,6 +157,8 @@ export interface UserProfileResponse {
     name: string | null;
     onboardingCompleted: boolean;
     activeBusinessId: string | null;
+    trialStartedAt: string | null;
+    trialEndsAt: string | null;
   };
 }
 

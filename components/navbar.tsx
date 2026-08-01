@@ -1,6 +1,7 @@
 "use client"
 
-import { signIn } from "next-auth/react"
+import { signIn, useSession } from "next-auth/react"
+import Link from "next/link"
 import { GoogleAuthButton } from "@/components/premium-buttons"
 
 const links = [
@@ -10,6 +11,9 @@ const links = [
 ]
 
 export function Navbar() {
+  const { status } = useSession()
+  const isAuthenticated = status === "authenticated"
+
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 bg-[#0a0f1e]/70 backdrop-blur-md border-b border-white/10">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -42,10 +46,20 @@ export function Navbar() {
           </div>
 
           {/* CTA */}
-          <GoogleAuthButton size="sm" onClick={() => signIn("google", { callbackUrl: "/dashboard" })}>
-            <span className="hidden sm:inline">Iniciar sesión con Google</span>
-            <span className="sm:hidden">Ingresar</span>
-          </GoogleAuthButton>
+          {isAuthenticated ? (
+            <Link
+              href="/dashboard"
+              className="inline-flex items-center gap-2 bg-white text-gray-900 font-semibold rounded-full px-4 py-2 sm:px-6 sm:py-3 text-sm sm:text-base hover:shadow-lg hover:shadow-white/20 transition-shadow duration-200"
+            >
+              <span className="hidden sm:inline">Ir al dashboard</span>
+              <span className="sm:hidden">Dashboard</span>
+            </Link>
+          ) : (
+            <GoogleAuthButton size="sm" onClick={() => signIn("google", { callbackUrl: "/dashboard" })}>
+              <span className="hidden sm:inline">Iniciar sesión con Google</span>
+              <span className="sm:hidden">Ingresar</span>
+            </GoogleAuthButton>
+          )}
         </div>
       </div>
     </nav>
