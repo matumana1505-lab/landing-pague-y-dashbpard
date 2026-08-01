@@ -1,14 +1,95 @@
 "use client"
 
-import { signIn, useSession } from "next-auth/react"
-import Link from "next/link"
+import { signIn, signOut, useSession } from "next-auth/react"
+import { useRouter } from "next/navigation"
+import { useEffect, useRef, useState } from "react"
 import { GoogleAuthButton } from "@/components/premium-buttons"
+import { AnimatePresence, motion } from "framer-motion"
 
 const links = [
   { label: "Cómo funciona", href: "#como-funciona" },
   { label: "Precio", href: "#precio" },
   { label: "Contacto", href: "#contacto" },
 ]
+
+function UserMenu() {
+  const { data: session } = useSession()
+  const router = useRouter()
+  const [open, setOpen] = useState(false)
+  const menuRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        setOpen(false)
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside)
+    return () => document.removeEventListener("mousedown", handleClickOutside)
+  }, [])
+
+  const name = session?.user?.name
+  const image = session?.user?.image
+  const initial = name?.[0]?.toUpperCase() ?? "?"
+
+  return (
+    <div className="relative" ref={menuRef}>
+      <button
+        type="button"
+        onClick={() => setOpen((prev) => !prev)}
+        aria-label="Cuenta"
+        className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-full border border-blue-500/30 transition-shadow duration-200 hover:ring-2 hover:ring-blue-400/50"
+      >
+        {image ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={image}
+            alt={name ?? "Usuario"}
+            referrerPolicy="no-referrer"
+            className="h-full w-full object-cover"
+          />
+        ) : (
+          <span className="flex h-full w-full items-center justify-center bg-blue-500/20 text-sm font-semibold text-blue-300">
+            {initial}
+          </span>
+        )}
+      </button>
+
+      <AnimatePresence>
+        {open && (
+          <motion.div
+            initial={{ opacity: 0, y: -8, scale: 0.96 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -8, scale: 0.96 }}
+            transition={{ duration: 0.15 }}
+            className="absolute right-0 mt-2 w-48 overflow-hidden rounded-xl border border-white/10 bg-[#0a0f1e] shadow-xl shadow-black/40"
+          >
+            <button
+              type="button"
+              onClick={() => {
+                setOpen(false)
+                router.push("/dashboard")
+              }}
+              className="block w-full px-4 py-2.5 text-left text-sm text-gray-300 transition-colors hover:bg-white/5 hover:text-white"
+            >
+              Ir al dashboard
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setOpen(false)
+                signOut({ callbackUrl: "/" })
+              }}
+              className="block w-full border-t border-white/10 px-4 py-2.5 text-left text-sm text-gray-300 transition-colors hover:bg-white/5 hover:text-white"
+            >
+              Cerrar sesión
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  )
+}
 
 export function Navbar() {
   const { status } = useSession()
@@ -47,13 +128,7 @@ export function Navbar() {
 
           {/* CTA */}
           {isAuthenticated ? (
-            <Link
-              href="/dashboard"
-              className="inline-flex items-center gap-2 bg-white text-gray-900 font-semibold rounded-full px-4 py-2 sm:px-6 sm:py-3 text-sm sm:text-base hover:shadow-lg hover:shadow-white/20 transition-shadow duration-200"
-            >
-              <span className="hidden sm:inline">Ir al dashboard</span>
-              <span className="sm:hidden">Dashboard</span>
-            </Link>
+            <UserMenu />
           ) : (
             <GoogleAuthButton size="sm" onClick={() => signIn("google", { callbackUrl: "/?welcome=true" })}>
               <span className="hidden sm:inline">Iniciar sesión con Google</span>
